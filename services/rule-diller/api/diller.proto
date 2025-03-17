@@ -1,0 +1,44 @@
+syntax = "proto3";
+
+package bandit.services.rulediller;
+
+option go_package = "./rulediller";
+
+import "google/api/annotations.proto";
+import "google/protobuf/any.proto";
+
+service RuleDillerService {
+  rpc GetRuleStatistic(GetRuleStatisticRequest) returns (GetRuleStatisticResponse) {
+    option (google.api.http) = {
+      get: "/v1/diller/rule/statistic/{id}"
+    };
+  };
+  rpc GetRuleData(GetRuleDataRequest) returns (GetRuleDataResponse) {
+    option (google.api.http) = {
+      get: "/v1/diller/rule/data"
+    };
+  };
+}
+
+message GetRuleStatisticRequest {
+    string id = 1; 
+}
+
+message GetRuleStatisticResponse {
+    string id = 1; 
+    repeated VariantScore scores = 2; 
+}
+
+message VariantScore {
+    string variant_id = 1;
+    double score = 2; 
+}
+
+message GetRuleDataRequest {
+    string service = 1; 
+    string context = 2; 
+}
+
+message GetRuleDataResponse {
+    google.protobuf.Any data = 1;
+}
