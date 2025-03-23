@@ -1,4 +1,4 @@
-package token
+package app
 
 import (
 	"context"
@@ -19,7 +19,7 @@ type AdminProvider interface {
 	UpdateRule(ctx context.Context, rule model.Rule) (model.Rule, error)
 	SetRuleState(ctx context.Context, id string, state model.StateType) error
 
-	GetVariant(ctx context.Context, id string) (model.Variant, error)
+	GetVariant(ctx context.Context, ruleID, variandID string) (model.Variant, error)
 	AddVariant(ctx context.Context, ruleID string, v model.Variant) (model.Variant, error)
 	SetVariantState(ctx context.Context, id string, state model.StateType) error
 }
@@ -103,7 +103,7 @@ func (i *Implementation) GetVariant(ctx context.Context, req *desc.GetVariantReq
 		return nil, status.Error(codes.InvalidArgument, "empty id")
 	}
 
-	v, err := i.ruleProvider.GetVariant(ctx, req.GetId())
+	v, err := i.ruleProvider.GetVariant(ctx, req.GetRuleId(), req.GetId())
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -197,7 +197,8 @@ func decodeVariants(in []model.Variant) []*desc.Variant {
 func decodeVariant(v model.Variant) *desc.Variant {
 	return &desc.Variant{
 		Id:    v.Id,
-		Data:  nil,
+		Name:  v.Name,
+		Data:  v.Data,
 		State: decodeStateType(v.State),
 	}
 }
@@ -208,6 +209,7 @@ func encodeVariant(v *desc.Variant) model.Variant {
 
 	return model.Variant{
 		Id:    v.GetId(),
+		Name:  v.GetName(),
 		Data:  marshaled,
 		State: encodeStateType(v.State),
 	}

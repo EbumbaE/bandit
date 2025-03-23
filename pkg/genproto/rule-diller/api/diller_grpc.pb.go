@@ -27,8 +27,8 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type RuleDillerServiceClient interface {
-	GetRuleStatistic(ctx context.Context, in *GetRuleStatisticRequest, opts ...grpc.CallOption) (*GetRuleStatisticResponse, error)
-	GetRuleData(ctx context.Context, in *GetRuleDataRequest, opts ...grpc.CallOption) (*GetRuleDataResponse, error)
+	GetRuleStatistic(ctx context.Context, in *GetRuleRequest, opts ...grpc.CallOption) (*GetRuleStatisticResponse, error)
+	GetRuleData(ctx context.Context, in *GetRuleRequest, opts ...grpc.CallOption) (*GetRuleDataResponse, error)
 }
 
 type ruleDillerServiceClient struct {
@@ -39,7 +39,7 @@ func NewRuleDillerServiceClient(cc grpc.ClientConnInterface) RuleDillerServiceCl
 	return &ruleDillerServiceClient{cc}
 }
 
-func (c *ruleDillerServiceClient) GetRuleStatistic(ctx context.Context, in *GetRuleStatisticRequest, opts ...grpc.CallOption) (*GetRuleStatisticResponse, error) {
+func (c *ruleDillerServiceClient) GetRuleStatistic(ctx context.Context, in *GetRuleRequest, opts ...grpc.CallOption) (*GetRuleStatisticResponse, error) {
 	out := new(GetRuleStatisticResponse)
 	err := c.cc.Invoke(ctx, RuleDillerService_GetRuleStatistic_FullMethodName, in, out, opts...)
 	if err != nil {
@@ -48,7 +48,7 @@ func (c *ruleDillerServiceClient) GetRuleStatistic(ctx context.Context, in *GetR
 	return out, nil
 }
 
-func (c *ruleDillerServiceClient) GetRuleData(ctx context.Context, in *GetRuleDataRequest, opts ...grpc.CallOption) (*GetRuleDataResponse, error) {
+func (c *ruleDillerServiceClient) GetRuleData(ctx context.Context, in *GetRuleRequest, opts ...grpc.CallOption) (*GetRuleDataResponse, error) {
 	out := new(GetRuleDataResponse)
 	err := c.cc.Invoke(ctx, RuleDillerService_GetRuleData_FullMethodName, in, out, opts...)
 	if err != nil {
@@ -61,8 +61,8 @@ func (c *ruleDillerServiceClient) GetRuleData(ctx context.Context, in *GetRuleDa
 // All implementations must embed UnimplementedRuleDillerServiceServer
 // for forward compatibility
 type RuleDillerServiceServer interface {
-	GetRuleStatistic(context.Context, *GetRuleStatisticRequest) (*GetRuleStatisticResponse, error)
-	GetRuleData(context.Context, *GetRuleDataRequest) (*GetRuleDataResponse, error)
+	GetRuleStatistic(context.Context, *GetRuleRequest) (*GetRuleStatisticResponse, error)
+	GetRuleData(context.Context, *GetRuleRequest) (*GetRuleDataResponse, error)
 	mustEmbedUnimplementedRuleDillerServiceServer()
 }
 
@@ -70,10 +70,10 @@ type RuleDillerServiceServer interface {
 type UnimplementedRuleDillerServiceServer struct {
 }
 
-func (UnimplementedRuleDillerServiceServer) GetRuleStatistic(context.Context, *GetRuleStatisticRequest) (*GetRuleStatisticResponse, error) {
+func (UnimplementedRuleDillerServiceServer) GetRuleStatistic(context.Context, *GetRuleRequest) (*GetRuleStatisticResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetRuleStatistic not implemented")
 }
-func (UnimplementedRuleDillerServiceServer) GetRuleData(context.Context, *GetRuleDataRequest) (*GetRuleDataResponse, error) {
+func (UnimplementedRuleDillerServiceServer) GetRuleData(context.Context, *GetRuleRequest) (*GetRuleDataResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetRuleData not implemented")
 }
 func (UnimplementedRuleDillerServiceServer) mustEmbedUnimplementedRuleDillerServiceServer() {}
@@ -90,7 +90,7 @@ func RegisterRuleDillerServiceServer(s grpc.ServiceRegistrar, srv RuleDillerServ
 }
 
 func _RuleDillerService_GetRuleStatistic_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetRuleStatisticRequest)
+	in := new(GetRuleRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -102,13 +102,13 @@ func _RuleDillerService_GetRuleStatistic_Handler(srv interface{}, ctx context.Co
 		FullMethod: RuleDillerService_GetRuleStatistic_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RuleDillerServiceServer).GetRuleStatistic(ctx, req.(*GetRuleStatisticRequest))
+		return srv.(RuleDillerServiceServer).GetRuleStatistic(ctx, req.(*GetRuleRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _RuleDillerService_GetRuleData_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetRuleDataRequest)
+	in := new(GetRuleRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -120,7 +120,7 @@ func _RuleDillerService_GetRuleData_Handler(srv interface{}, ctx context.Context
 		FullMethod: RuleDillerService_GetRuleData_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RuleDillerServiceServer).GetRuleData(ctx, req.(*GetRuleDataRequest))
+		return srv.(RuleDillerServiceServer).GetRuleData(ctx, req.(*GetRuleRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }

@@ -58,8 +58,8 @@ func readConfig(configPath string) *Config {
 }
 
 type Config struct {
-	Service  RuleAdminService `yaml:"service"`
-	Postgres Postgres         `yaml:"postgres"`
+	Service RuleAdminService `yaml:"service"`
+	Redis   Redis            `yaml:"redis"`
 }
 
 type RuleAdminService struct {
@@ -70,7 +70,7 @@ type RuleAdminService struct {
 	ConnectionTimeout time.Duration `yaml:"connection_timeout"`
 }
 
-type Postgres struct {
+type Redis struct {
 	Host     string `yaml:"host"`
 	Port     string `yaml:"port"`
 	User     string `yaml:"user"`

@@ -1,10 +1,10 @@
 package internal
 
 type Rule struct {
-	Id          string
-	Name        string
-	Description string
-	State       StateType
+	Id          string    `db:"id"`
+	Name        string    `db:"name"`
+	Description string    `db:"description"`
+	State       StateType `db:"state"`
 	Variants    []Variant
 }
 
@@ -16,7 +16,8 @@ var (
 )
 
 type Variant struct {
-	Id    string
-	Data  []byte
-	State StateType
+	Id    string    `db:"id"`
+	Name  string    `db:"name"`
+	Data  []byte    `db:"data"`
+	State StateType `db:"state"`
 }

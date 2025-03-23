@@ -6,7 +6,7 @@ service:
   connection_timeout: 10s
   only_cache_mode: false
 
-postgres:
+redis:
   host: 0.0.0.1
   port: 6432
   user: rule-admin-user

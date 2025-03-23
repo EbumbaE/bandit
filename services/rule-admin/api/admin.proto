@@ -5,7 +5,6 @@ package bandit.services.ruleadmin;
 option go_package = "./ruleadmin";
 
 import "google/protobuf/timestamp.proto";
-import "google/protobuf/any.proto";
 import "google/protobuf/empty.proto";
 import "google/api/annotations.proto";
 
@@ -63,8 +62,9 @@ message Rule {
 
 message Variant {
   string id = 1;
-  google.protobuf.Any data = 2;
-  State state = 3;
+  string name = 2;
+  bytes data = 3;
+  State state = 4;
 }
 
 message GetRuleRequest {

@@ -1,15 +1,13 @@
-package database
+package psql
 
 import (
 	"context"
 
-	"github.com/georgysavva/scany/pgxscan"
-	"github.com/jackc/pgconn"
-	"github.com/jackc/pgx/v4"
-	"github.com/jackc/pgx/v4/pgxpool"
-	"go.uber.org/zap"
-
-	"github.com/EbumbaE/bandit/pkg/logger"
+	"github.com/georgysavva/scany/v2/pgxscan"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/pkg/errors"
 )
 
 type Database interface {
@@ -28,10 +26,9 @@ type database struct {
 }
 
 func NewDatabase(ctx context.Context, dsn string) (Database, error) {
-	conn, err := pgxpool.Connect(ctx, dsn)
+	conn, err := pgxpool.New(ctx, dsn)
 	if err != nil {
-		logger.Error("database connection: ", zap.Error(err))
-		return nil, err
+		return nil, errors.Wrap(err, "database connection")
 	}
 
 	db := &database{conn: conn}
