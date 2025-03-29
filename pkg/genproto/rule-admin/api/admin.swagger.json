@@ -1,0 +1,408 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "rule-admin/api/admin.proto",
+    "version": "version not set"
+  },
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/v1/admin/rule": {
+      "post": {
+        "operationId": "RuleAdminService_CreateRule",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/ruleadminRuleResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ruleadminModifyRuleRequest"
+            }
+          }
+        ],
+        "tags": [
+          "RuleAdminService"
+        ]
+      }
+    },
+    "/v1/admin/rule/state/{id}": {
+      "put": {
+        "operationId": "RuleAdminService_SetRuleState",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ruleadminSetRuleStateRequest"
+            }
+          }
+        ],
+        "tags": [
+          "RuleAdminService"
+        ]
+      }
+    },
+    "/v1/admin/rule/{id}": {
+      "get": {
+        "operationId": "RuleAdminService_GetRule",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/ruleadminRuleResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "RuleAdminService"
+        ]
+      },
+      "put": {
+        "operationId": "RuleAdminService_UpdateRule",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/ruleadminRuleResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ruleadminModifyRuleRequest"
+            }
+          }
+        ],
+        "tags": [
+          "RuleAdminService"
+        ]
+      }
+    },
+    "/v1/admin/variant": {
+      "post": {
+        "operationId": "RuleAdminService_AddVariant",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/ruleadminVariantResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ruleadminAddVariantRequest"
+            }
+          }
+        ],
+        "tags": [
+          "RuleAdminService"
+        ]
+      }
+    },
+    "/v1/admin/variant/state/{id}": {
+      "put": {
+        "operationId": "RuleAdminService_SetVariantState",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ruleadminSetVariantStateRequest"
+            }
+          }
+        ],
+        "tags": [
+          "RuleAdminService"
+        ]
+      }
+    },
+    "/v1/admin/variant/{id}": {
+      "get": {
+        "operationId": "RuleAdminService_GetVariant",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/ruleadminVariantResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "rule_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "RuleAdminService"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "type_url": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string",
+          "format": "byte"
+        }
+      }
+    },
+    "ruleadminAddVariantRequest": {
+      "type": "object",
+      "properties": {
+        "rule_id": {
+          "type": "string"
+        },
+        "variant": {
+          "$ref": "#/definitions/ruleadminVariant"
+        }
+      }
+    },
+    "ruleadminModifyRuleRequest": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        }
+      }
+    },
+    "ruleadminRule": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "state": {
+          "$ref": "#/definitions/ruleadminState"
+        },
+        "variants": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ruleadminVariant"
+          }
+        }
+      }
+    },
+    "ruleadminRuleResponse": {
+      "type": "object",
+      "properties": {
+        "rule": {
+          "$ref": "#/definitions/ruleadminRule"
+        }
+      }
+    },
+    "ruleadminSetRuleStateRequest": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "state": {
+          "$ref": "#/definitions/ruleadminState"
+        }
+      }
+    },
+    "ruleadminSetVariantStateRequest": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "rule_id": {
+          "type": "string"
+        },
+        "state": {
+          "$ref": "#/definitions/ruleadminState"
+        }
+      }
+    },
+    "ruleadminState": {
+      "type": "string",
+      "enum": [
+        "RULE_STATE_UNSPECIFIED",
+        "RULE_STATE_ENABLED",
+        "RULE_STATE_DISABLED"
+      ],
+      "default": "RULE_STATE_UNSPECIFIED"
+    },
+    "ruleadminVariant": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "data": {
+          "type": "string",
+          "format": "byte"
+        },
+        "state": {
+          "$ref": "#/definitions/ruleadminState"
+        }
+      }
+    },
+    "ruleadminVariantResponse": {
+      "type": "object",
+      "properties": {
+        "variant": {
+          "$ref": "#/definitions/ruleadminVariant"
+        }
+      }
+    },
+    "runtimeError": {
+      "type": "object",
+      "properties": {
+        "error": {
+          "type": "string"
+        },
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
+    }
+  }
+}

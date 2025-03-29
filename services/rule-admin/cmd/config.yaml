@@ -1,0 +1,13 @@
+service:
+  rule_admin_address: 0.0.0.0:8444
+  swagger_address: 0.0.0.0:8445
+  swagger_host: rule.admin.swagger.bandit.ebumba.ru
+  rule_diller_adress: rule-diller:8443
+  connection_timeout: 10s
+  only_cache_mode: false
+
+postgres:
+  host: 0.0.0.1
+  port: 6432
+  user: rule-admin-user
+  dbname: rule-admin

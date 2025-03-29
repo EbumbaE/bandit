@@ -1,0 +1,118 @@
+syntax = "proto3";
+
+package bandit.services.ruleadmin;
+
+option go_package = "./ruleadmin";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+import "google/api/annotations.proto";
+
+service RuleAdminService {
+  rpc GetRule(GetRuleRequest) returns (RuleResponse) {
+    option (google.api.http) = {
+      get: "/v1/admin/rule/{id}"
+    };
+  };
+  rpc CreateRule(ModifyRuleRequest) returns (RuleResponse) {
+    option (google.api.http) = {
+      post: "/v1/admin/rule"
+      body: "*"
+    };
+  };
+  rpc UpdateRule(ModifyRuleRequest) returns (RuleResponse) {
+    option (google.api.http) = {
+      put: "/v1/admin/rule/{id}"
+      body: "*"
+    };
+  };
+  rpc SetRuleState(SetRuleStateRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      put: "/v1/admin/rule/state/{id}"
+      body: "*"
+    };
+  };
+
+  rpc GetVariant(GetVariantRequest) returns (VariantResponse) {
+    option (google.api.http) = {
+      get: "/v1/admin/variant/{id}"
+    };
+  };
+  rpc AddVariant(AddVariantRequest) returns (VariantResponse) {
+    option (google.api.http) = {
+      post: "/v1/admin/variant"
+      body: "*"
+    };
+  };
+  rpc SetVariantState(SetVariantStateRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      put: "/v1/admin/variant/state/{id}"
+      body: "*"
+    };
+  };
+}
+
+message Rule {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  State state = 4;
+  repeated Variant variants = 5;
+}
+
+message Variant {
+  string id = 1;
+  string name = 2;
+  bytes data = 3;
+  State state = 4;
+}
+
+message GetRuleRequest {
+  string id = 1;
+}
+
+message ModifyRuleRequest {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+}
+
+message SetRuleStateRequest {
+  string id = 1;
+  State state = 2;
+}
+
+message RuleResponse {
+  Rule rule = 1;
+}
+
+message GetVariantRequest {
+  string id = 1;
+  string rule_id = 2;
+}
+
+message AddVariantRequest {
+  string rule_id = 1;
+  Variant variant = 2; 
+}
+
+message RemoveVariantRequest {
+  string id = 1;
+  string rule_id = 2;
+}
+
+message SetVariantStateRequest {
+  string id = 1;
+  string rule_id = 2;
+  State state = 3;
+}
+
+message VariantResponse {
+  Variant variant = 1;
+}
+
+enum State {
+  RULE_STATE_UNSPECIFIED = 0;
+  RULE_STATE_ENABLED = 1;
+  RULE_STATE_DISABLED = 2;
+}
