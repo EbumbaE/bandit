@@ -84,20 +84,20 @@ func main() {
 		bandit.Mutex.RUnlock()
 	}
 
-	err := plotHistory("mu.png", "Mu over Time", "Step", "Mu", history, func(h *ArmHistory, i int) float64 { return h.Mu[i] })
+	err := plotHistory("mu.png", "μ с течением времени", "Итерация", "μ", history, func(h *ArmHistory, i int) float64 { return h.Mu[i] })
 	if err != nil {
 		panic(err)
 	}
-	err = plotHistory("sigma_sq.png", "Sigma Squared over Time", "Step", "Sigma Squared", history, func(h *ArmHistory, i int) float64 { return h.SigmaSq[i] })
+	err = plotHistory("sigma_sq.png", "σ^2 с течением времени", "Итерация", "σ^2", history, func(h *ArmHistory, i int) float64 { return h.SigmaSq[i] })
 	if err != nil {
 		panic(err)
 	}
-	err = plotHistory("count.png", "Count over Time", "Step", "Count", history, func(h *ArmHistory, i int) float64 { return float64(h.Count[i]) })
+	err = plotHistory("count.png", "Количество выборов ручки со временем", "Итерация", "Количество", history, func(h *ArmHistory, i int) float64 { return float64(h.Count[i]) })
 	if err != nil {
 		panic(err)
 	}
 
-	err = plotHistory("probabilities.png", "Selection Probability over Time", "Step", "Probability", history, func(h *ArmHistory, i int) float64 { return h.Probabilities[i] })
+	err = plotHistory("probabilities.png", "Вероятность выбора с течением времени", "Итерация", "Вероятность выбора", history, func(h *ArmHistory, i int) float64 { return h.Probabilities[i] })
 	if err != nil {
 		panic(err)
 	}
@@ -117,8 +117,8 @@ func plotHistory(filename, title, xLabel, yLabel string, history map[string]*Arm
 	colors := []color.Color{
 		color.RGBA{R: 0, G: 255, B: 0, A: 255},
 		color.RGBA{R: 0, G: 0, B: 255, A: 255},
+		color.RGBA{R: 255, G: 0, B: 0, A: 255},
 	}
-	colorIndex := 0
 
 	armIDs := make([]string, 0, len(history))
 	for armID := range history {
@@ -126,28 +126,32 @@ func plotHistory(filename, title, xLabel, yLabel string, history map[string]*Arm
 	}
 	sort.Strings(armIDs)
 
-	for _, armID := range armIDs {
+	for idx, armID := range armIDs {
 		h := history[armID]
-		if len(h.Mu) == 0 {
+
+		if len(h.Steps) == 0 {
 			continue
 		}
-		pts := make(plotter.XYs, len(h.Mu))
-		for i := range h.Mu {
-			pts[i].X = float64(h.Steps[i])
-			pts[i].Y = extract(h, i)
+		pts := make(plotter.XYs, len(h.Steps))
+		for step, val := range h.Steps {
+			pts[step].X = float64(val)
+			pts[step].Y = extract(h, step)
 		}
+
 		line, err := plotter.NewLine(pts)
 		if err != nil {
 			return err
 		}
-		line.Color = colors[colorIndex%len(colors)]
-		colorIndex++
+
+		line.Color = colors[idx%len(colors)]
+
 		p.Add(line)
 		p.Legend.Add(armID, line)
 	}
 
-	if err := p.Save(6*vg.Inch, 4*vg.Inch, filename); err != nil {
+	if err := p.Save(10*vg.Inch, 6*vg.Inch, filename); err != nil {
 		return err
 	}
+
 	return nil
 }
