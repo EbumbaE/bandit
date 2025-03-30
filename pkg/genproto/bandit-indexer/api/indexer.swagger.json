@@ -46,26 +46,41 @@
     "banditindexerGetRuleScoresResponse": {
       "type": "object",
       "properties": {
-        "scores": {
+        "service": {
+          "type": "string"
+        },
+        "context": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "variants": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/banditindexerVariantScore"
+            "$ref": "#/definitions/banditindexerVariant"
           }
         }
       }
     },
-    "banditindexerVariantScore": {
+    "banditindexerVariant": {
       "type": "object",
       "properties": {
-        "variant_id": {
+        "id": {
           "type": "string"
         },
         "score": {
           "type": "number",
           "format": "double"
         },
-        "bandit_type": {
-          "type": "string"
+        "data": {
+          "type": "string",
+          "format": "byte"
+        },
+        "count": {
+          "type": "string",
+          "format": "uint64"
         }
       }
     },

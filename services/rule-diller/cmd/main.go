@@ -60,14 +60,15 @@ func readConfig(configPath string) *Config {
 type Config struct {
 	Service RuleAdminService `yaml:"service"`
 	Redis   Redis            `yaml:"redis"`
+	Kafka   Kafka            `yaml:"kafka"`
 }
 
 type RuleAdminService struct {
-	SwaggerAddress    string        `yaml:"swagger_address"`
-	SwaggerHost       string        `yaml:"swagger_host"`
-	GrpcAddress       string        `yaml:"rule_admin_address"`
-	RuleDillerAddress string        `yaml:"rule_diller_address"`
-	ConnectionTimeout time.Duration `yaml:"connection_timeout"`
+	SwaggerAddress       string        `yaml:"swagger_address"`
+	GrpcAddress          string        `yaml:"rule_diller_address"`
+	SwaggerHost          string        `yaml:"swagger_host"`
+	BanditIndexerAddress string        `yaml:"bandit_indexer_address"`
+	ConnectionTimeout    time.Duration `yaml:"connection_timeout"`
 }
 
 type Redis struct {
@@ -77,4 +78,9 @@ type Redis struct {
 	DBName   string `yaml:"dbname"`
 	Password string
 	Dsn      string
+}
+
+type Kafka struct {
+	Brokers []string `yaml:"brokers"`
+	Topic   string   `yaml:"topic"`
 }

@@ -9,7 +9,7 @@ import (
 
 var ErrNotFound = errors.New("key not found")
 
-type Redis interface {
+type Client interface {
 	Get(ctx context.Context, key string) (string, error)
 	Set(ctx context.Context, key string, value interface{}) error
 	ZGet(ctx context.Context, key string) ([]string, error)
@@ -21,7 +21,7 @@ type redisClient struct {
 	client *redis.Client
 }
 
-func NewRedis(ctx context.Context, addr string) (Redis, error) {
+func NewRedis(ctx context.Context, addr string) (Client, error) {
 	opt, err := redis.ParseURL(addr)
 	if err != nil {
 		return nil, errors.Wrap(err, "redis connection parse error")

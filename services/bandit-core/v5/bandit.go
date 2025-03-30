@@ -5,7 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"time"
 
+	"golang.org/x/exp/rand"
 	"gonum.org/v1/gonum/stat/distuv"
 )
 
@@ -103,9 +105,56 @@ func (gb *GaussianBandit) Select(arms map[string]*ArmParams) string {
 	return selected
 }
 
-func (gb *GaussianBandit) CalculateProbabilities(arms map[string]*ArmParams) map[string]float64 {
+const DefaultExplorationFactor = 0.1
+
+type Probability struct {
+	Score float64
+	Count uint64
+}
+
+func SelectByProbabilities(options map[string]Probability, explorationFactor float64) string {
+	if len(options) == 0 {
+		return ""
+	}
+
+	rand.Seed(uint64(time.Now().UnixNano()))
+
+	var totalCount uint64
+	for _, opt := range options {
+		totalCount += opt.Count
+	}
+
+	sumAdjusted := 0.0
+	for key, opt := range options {
+		opt.Score = opt.Score + explorationFactor*math.Sqrt(math.Log(float64(totalCount+1))/(float64(opt.Count)+1))
+
+		sumAdjusted += opt.Score
+
+		options[key] = opt
+	}
+
+	r := rand.Float64() * sumAdjusted
+	cumulativeProb := 0.0
+
+	var lastKey string
+	for key, opt := range options {
+		lastKey = key
+
+		cumulativeProb += opt.Score / sumAdjusted
+
+		if r <= cumulativeProb {
+			opt.Count++
+			options[key] = opt
+			return key
+		}
+	}
+
+	return lastKey
+}
+
+func (gb *GaussianBandit) CalculateProbabilities(arms map[string]*ArmParams) map[string]Probability {
 	total := 0.0
-	samples := make(map[string]float64)
+	probs := make(map[string]Probability, len(arms))
 
 	for armID, params := range arms {
 		var sample float64
@@ -115,13 +164,15 @@ func (gb *GaussianBandit) CalculateProbabilities(arms map[string]*ArmParams) map
 			sigma := math.Sqrt(params.SigmaSq / float64(params.N))
 			sample = distuv.Normal{Mu: params.Mu, Sigma: sigma}.Rand()
 		}
-		samples[armID] = sample
+		probs[armID] = Probability{Score: sample}
 		total += math.Exp(sample)
 	}
 
-	probs := make(map[string]float64)
-	for armID, sample := range samples {
-		probs[armID] = math.Exp(sample) / total
+	for armID, prob := range probs {
+
+		prob.Score = math.Exp(prob.Score) / total
+		prob.Count = uint64(arms[armID].N)
+		probs[armID] = prob
 	}
 
 	return probs

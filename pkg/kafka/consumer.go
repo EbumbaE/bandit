@@ -11,17 +11,20 @@ import (
 )
 
 type KafkaConsumer interface {
-	Consume(ctx context.Context, handler func(msg []byte) error) error
+	Consume(ctx context.Context)
 	Close() error
 }
 
+type Handler func(ctx context.Context, msg []byte) error
+
 type kafkaConsumer struct {
 	consumer   sarama.Consumer
+	handler    Handler
 	partitions []int32
 	topic      string
 }
 
-func NewKafkaConsumer(ctx context.Context, brokers []string, topic string) (KafkaConsumer, error) {
+func NewKafkaConsumer(ctx context.Context, brokers []string, topic string, handler Handler) (KafkaConsumer, error) {
 	config := sarama.NewConfig()
 	config.Consumer.Return.Errors = true
 
@@ -40,14 +43,16 @@ func NewKafkaConsumer(ctx context.Context, brokers []string, topic string) (Kafk
 		consumer:   consumer,
 		topic:      topic,
 		partitions: partitions,
+		handler:    handler,
 	}, nil
 }
 
-func (kc *kafkaConsumer) Consume(ctx context.Context, handler func(msg []byte) error) error {
-	for _, partition := range kc.partitions {
-		partitionConsumer, err := kc.consumer.ConsumePartition(kc.topic, partition, sarama.OffsetNewest)
+func (c *kafkaConsumer) Consume(ctx context.Context) {
+	for _, partition := range c.partitions {
+		partitionConsumer, err := c.consumer.ConsumePartition(c.topic, partition, sarama.OffsetNewest)
 		if err != nil {
-			return errors.Wrapf(err, "failed to consume partition %d", partition)
+			logger.Error("failed to consume", zap.String("topic", c.topic), zap.Int32("partition", partition))
+			return
 		}
 		defer partitionConsumer.Close()
 
@@ -55,7 +60,7 @@ func (kc *kafkaConsumer) Consume(ctx context.Context, handler func(msg []byte) e
 			for {
 				select {
 				case msg := <-pc.Messages():
-					if err := handler(msg.Value); err != nil {
+					if err := c.handler(ctx, msg.Value); err != nil {
 						logger.Error("message handling failed: ",
 							zap.Int32("partition", msg.Partition),
 							zap.Int64("offset", msg.Offset),
@@ -73,11 +78,14 @@ func (kc *kafkaConsumer) Consume(ctx context.Context, handler func(msg []byte) e
 	}
 
 	<-ctx.Done()
-	return nil
+
+	logger.Error("kafka consumer stop", zap.String("topic", c.topic))
+
+	return
 }
 
-func (kc *kafkaConsumer) Close() error {
-	if err := kc.consumer.Close(); err != nil {
+func (c *kafkaConsumer) Close() error {
+	if err := c.consumer.Close(); err != nil {
 		return errors.Wrap(err, "failed to close consumer")
 	}
 	return nil
