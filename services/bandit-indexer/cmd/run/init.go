@@ -1,34 +1,40 @@
-package main
+package run
 
 import (
 	"context"
 	"sync"
 
 	"go.uber.org/zap"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 
-	rule_diller_client "github.com/EbumbaE/bandit/pkg/genproto/rule-diller/api"
+	"github.com/EbumbaE/bandit/pkg/kafka"
 	"github.com/EbumbaE/bandit/pkg/logger"
 	"github.com/EbumbaE/bandit/pkg/psql"
 
-	rule_admin_service "github.com/EbumbaE/bandit/services/rule-admin/app"
-	rule_diller_wrapper "github.com/EbumbaE/bandit/services/rule-admin/internal/client"
-	rule_admin_storage "github.com/EbumbaE/bandit/services/rule-admin/internal/database"
-	"github.com/EbumbaE/bandit/services/rule-admin/internal/provider"
-	"github.com/EbumbaE/bandit/services/rule-admin/server"
+	rule_admin_service "github.com/EbumbaE/bandit/services/bandit-indexer/app"
+	rule_admin_wrapper "github.com/EbumbaE/bandit/services/bandit-indexer/internal/client"
+	"github.com/EbumbaE/bandit/services/bandit-indexer/internal/provider"
+	rule_admin_storage "github.com/EbumbaE/bandit/services/bandit-indexer/internal/storage"
+	"github.com/EbumbaE/bandit/services/bandit-indexer/server"
 )
+
+type clients struct {
+	adminWrapper *rule_admin_wrapper.AdminWrapper
+}
 
 type connections struct {
 	db psql.Database
 }
 
 type repositories struct {
-	ruleAdmin *rule_admin_storage.Storage
+	banditIndexer *rule_admin_storage.Storage
 }
 
-type clients struct {
-	ruleDiller *rule_diller_wrapper.RuleDillerWrapper
+type consumers struct {
+	ruleAdminEvent kafka.KafkaConsumer
+}
+
+type producers struct {
+	banditIndexerEvent kafka.SyncProducer
 }
 
 type application struct {
@@ -48,22 +54,12 @@ func newApp(ctx context.Context, cfg *Config) *application {
 		wg:  &sync.WaitGroup{},
 	}
 
-	a.initClients(ctx)
 	a.initConnections(ctx)
 	a.initRepos(ctx)
 	a.initProvider()
 	a.initService()
 
 	return &a
-}
-
-func (a *application) initClients(ctx context.Context) {
-	conn, err := grpc.DialContext(ctx, a.cfg.Service.RuleDillerAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
-	if err != nil {
-		logger.Fatal("connect to rule-diller", zap.Error(err))
-	}
-
-	a.clients.ruleDiller = rule_diller_wrapper.NewRuleDillerWrapper(rule_diller_client.NewRuleDillerServiceClient(conn))
 }
 
 func (a *application) initConnections(ctx context.Context) {
@@ -75,13 +71,13 @@ func (a *application) initConnections(ctx context.Context) {
 }
 
 func (a *application) initRepos(ctx context.Context) {
-	ruleAdmin, err := rule_admin_storage.New(ctx, a.connections.db)
+	banditIndexer, err := rule_admin_storage.New(ctx, a.connections.db)
 	if err != nil {
 		logger.Fatal("init rule admin repo", zap.Error(err))
 	}
 
 	a.repositories = repositories{
-		ruleAdmin: ruleAdmin,
+		banditIndexer: banditIndexer,
 	}
 }
 
@@ -94,8 +90,8 @@ func (a *application) initService() {
 }
 
 func (a *application) Run(ctx context.Context) error {
-	server.StartRuleAdmin(ctx, a.service, a.wg, a.cfg.Service.GrpcAddress)
-	server.InitRuleAdminSwagger(ctx, a.wg, a.cfg.Service.SwaggerAddress, a.cfg.Service.SwaggerHost, a.cfg.Service.GrpcAddress)
+	server.StartRuleDiller(ctx, a.service, a.wg, a.cfg.Service.GrpcAddress)
+	server.InitRuleDillerSwagger(ctx, a.wg, a.cfg.Service.SwaggerAddress, a.cfg.Service.SwaggerHost, a.cfg.Service.GrpcAddress)
 
 	return nil
 }

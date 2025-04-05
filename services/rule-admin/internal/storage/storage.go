@@ -1,4 +1,4 @@
-package database
+package storage
 
 import (
 	"context"
@@ -74,12 +74,12 @@ func (s *Storage) CreateRule(ctx context.Context, rule model.Rule) (model.Rule, 
 	query := `
 		INSERT INTO rule_info
 		(
-			id, created_at,
+			id, created_at, updated_at,
 			name, description, state
 		)
 		VALUES
 		(
-			gen_random_uuid(), NOW() at time zone 'utc', 
+			gen_random_uuid(), NOW() at time zone 'utc', NOW() at time zone 'utc',
 			$1, $2, $3
 		)
 		RETURNING id;
@@ -154,12 +154,12 @@ func (s *Storage) AddVariant(ctx context.Context, ruleID string, v model.Variant
 	query := `
 		INSERT INTO variant_info
 		(
-			id, created_at,
+			id, created_at, updated_at,
 			rule_id, name, data, state
 		)
 		VALUES
 		(
-			gen_random_uuid(), NOW() at time zone 'utc', 
+			gen_random_uuid(), NOW() at time zone 'utc', NOW() at time zone 'utc',
 			$1, $2, $3, $4
 		)
 		RETURNING id;

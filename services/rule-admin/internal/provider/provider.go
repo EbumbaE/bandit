@@ -9,6 +9,7 @@ import (
 
 	"github.com/EbumbaE/bandit/pkg/logger"
 	model "github.com/EbumbaE/bandit/services/rule-admin/internal"
+	"github.com/EbumbaE/bandit/services/rule-admin/internal/notifier"
 )
 
 var ErrNotFound = errors.New("not found")
@@ -25,12 +26,21 @@ type Storage interface {
 	SetVariantState(ctx context.Context, id string, state model.StateType) error
 }
 
-type Provider struct {
-	storage Storage
+type Notifier interface {
+	SendRule(ctx context.Context, ruleID string, action notifier.ActionType) error
+	SendVariant(ctx context.Context, ruleID string, action notifier.ActionType) error
 }
 
-func NewProvider() *Provider {
-	return &Provider{}
+type Provider struct {
+	storage  Storage
+	notifier Notifier
+}
+
+func NewProvider(storage Storage, notifier Notifier) *Provider {
+	return &Provider{
+		storage:  storage,
+		notifier: notifier,
+	}
 }
 
 func (p *Provider) GetRule(ctx context.Context, id string) (model.Rule, error) {
@@ -70,6 +80,10 @@ func (p *Provider) CreateRule(ctx context.Context, r model.Rule) (model.Rule, er
 	}
 	r.Variants = createdVariants
 
+	if err := p.notifier.SendRule(ctx, r.Id, notifier.ActionCreate); err != nil {
+		logger.Error("failed send create rule event", zap.Error(err))
+	}
+
 	return r, nil
 }
 
@@ -91,6 +105,17 @@ func (p *Provider) SetRuleState(ctx context.Context, id string, state model.Stat
 
 	if err := p.storage.SetRuleState(ctx, id, state); err != nil {
 		return err
+	}
+
+	switch state {
+	case model.StateTypeDisable:
+		if err := p.notifier.SendRule(ctx, id, notifier.ActionInactive); err != nil {
+			logger.Error("failed send inactive rule event", zap.Error(err))
+		}
+	case model.StateTypeEnable:
+		if err := p.notifier.SendRule(ctx, id, notifier.ActionActive); err != nil {
+			logger.Error("failed send active rule event", zap.Error(err))
+		}
 	}
 
 	return nil
@@ -117,6 +142,10 @@ func (p *Provider) AddVariant(ctx context.Context, ruleID string, v model.Varian
 		return model.Variant{}, err
 	}
 
+	if err := p.notifier.SendRule(ctx, v.Id, notifier.ActionCreate); err != nil {
+		logger.Error("failed send create variant event", zap.Error(err))
+	}
+
 	return v, nil
 }
 
@@ -126,6 +155,17 @@ func (p *Provider) SetVariantState(ctx context.Context, id string, state model.S
 
 	if err := p.storage.SetVariantState(ctx, id, state); err != nil {
 		return err
+	}
+
+	switch state {
+	case model.StateTypeDisable:
+		if err := p.notifier.SendRule(ctx, id, notifier.ActionCreate); err != nil {
+			logger.Error("failed send inactive variant event", zap.Error(err))
+		}
+	case model.StateTypeEnable:
+		if err := p.notifier.SendRule(ctx, id, notifier.ActionCreate); err != nil {
+			logger.Error("failed send active variant event", zap.Error(err))
+		}
 	}
 
 	return nil
