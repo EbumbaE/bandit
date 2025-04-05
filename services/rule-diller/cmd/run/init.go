@@ -1,23 +1,32 @@
-package main
+package run
 
 import (
 	"context"
 	"sync"
 
 	"go.uber.org/zap"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 
+	bandit_indexer_client "github.com/EbumbaE/bandit/pkg/genproto/bandit-indexer/api"
+	"github.com/EbumbaE/bandit/pkg/kafka"
 	"github.com/EbumbaE/bandit/pkg/logger"
 	"github.com/EbumbaE/bandit/pkg/redis"
 
 	rule_diller_service "github.com/EbumbaE/bandit/services/rule-diller/app"
-	rule_diller_consumer "github.com/EbumbaE/bandit/services/rule-diller/internal/consumer"
+	bandit_indexer_wrapper "github.com/EbumbaE/bandit/services/rule-diller/internal/client"
+	"github.com/EbumbaE/bandit/services/rule-diller/internal/consumer"
 	"github.com/EbumbaE/bandit/services/rule-diller/internal/provider"
 	rule_diller_storage "github.com/EbumbaE/bandit/services/rule-diller/internal/storage"
 	"github.com/EbumbaE/bandit/services/rule-diller/server"
 )
 
+type clients struct {
+	indexerWrapper *bandit_indexer_wrapper.IndexerWrapper
+}
+
 type connections struct {
-	redisConn redis.Redis
+	redisConn *redis.Client
 }
 
 type repositories struct {
@@ -25,13 +34,15 @@ type repositories struct {
 }
 
 type consumers struct {
-	ruleDiller *rule_diller_consumer.Consumer
+	ruleDiller kafka.KafkaConsumer
 }
 
 type application struct {
+	clients      clients
 	connections  connections
 	repositories repositories
 	provider     *provider.Provider
+	consumers    consumers
 	service      *rule_diller_service.Implementation
 
 	cfg Config
@@ -44,13 +55,23 @@ func newApp(ctx context.Context, cfg *Config) *application {
 		wg:  &sync.WaitGroup{},
 	}
 
+	a.initClients(ctx)
 	a.initConnections(ctx)
-	a.initRepos(ctx)
+	a.initRepos()
 	a.initProvider()
 	a.initConsumer(ctx)
 	a.initService()
 
 	return &a
+}
+
+func (a *application) initClients(ctx context.Context) {
+	conn, err := grpc.DialContext(ctx, a.cfg.Service.BanditIndexerAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		logger.Fatal("connect to rule-diller", zap.Error(err))
+	}
+
+	a.clients.indexerWrapper = bandit_indexer_wrapper.NewIndexerWrapper(bandit_indexer_client.NewBanditIndexerServiceClient(conn))
 }
 
 func (a *application) initConnections(ctx context.Context) {
@@ -61,11 +82,8 @@ func (a *application) initConnections(ctx context.Context) {
 	}
 }
 
-func (a *application) initRepos(ctx context.Context) {
-	ruleDiller, err := rule_diller_storage.New(ctx, a.connections.redisConn)
-	if err != nil {
-		logger.Fatal("init rule-diller repo", zap.Error(err))
-	}
+func (a *application) initRepos() {
+	ruleDiller := rule_diller_storage.NewStorage(a.connections.redisConn)
 
 	a.repositories = repositories{
 		ruleDiller: ruleDiller,
@@ -73,10 +91,19 @@ func (a *application) initRepos(ctx context.Context) {
 }
 
 func (a *application) initProvider() {
-	a.provider = provider.NewProvider()
+	a.provider = provider.NewProvider(a.repositories.ruleDiller)
 }
 
 func (a *application) initConsumer(ctx context.Context) {
+	handler := consumer.NewConsumer(a.clients.indexerWrapper, a.repositories.ruleDiller)
+
+	consumer, err := kafka.NewKafkaConsumer(ctx, a.cfg.Kafka.Brokers, a.cfg.Kafka.Topic, handler.Handle)
+	if err != nil {
+	}
+
+	go consumer.Consume(ctx)
+
+	a.consumers.ruleDiller = consumer
 }
 
 func (a *application) initService() {
@@ -92,4 +119,5 @@ func (a *application) Run(ctx context.Context) error {
 
 func (a *application) Close() {
 	a.connections.redisConn.Close()
+	a.consumers.ruleDiller.Close()
 }

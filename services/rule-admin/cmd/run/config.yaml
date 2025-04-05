@@ -6,8 +6,12 @@ service:
   connection_timeout: 10s
   only_cache_mode: false
 
-redis:
+postgres:
   host: 0.0.0.1
   port: 6432
   user: rule-admin-user
   dbname: rule-admin
+
+kafka:
+  brokers: broker1, broker2
+  topic: rule_admin_event

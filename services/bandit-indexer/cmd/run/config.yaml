@@ -1,0 +1,18 @@
+service:
+  bandit_indexer_address: 0.0.0.0:8444
+  swagger_address: 0.0.0.0:8445
+  swagger_host: bandit.indexer.swagger.bandit.ebumba.ru
+  rule_admin_adress: rule-admin:8443
+  connection_timeout: 10s
+  only_cache_mode: false
+
+postgres:
+  host: 0.0.0.1
+  port: 6432
+  user: bandit-indexer-user
+  dbname: bandit-indexer
+
+kafka:
+  brokers: broker1, broker2
+  topic: rule_admin_event
+

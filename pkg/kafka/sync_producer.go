@@ -17,7 +17,7 @@ type syncProducer struct {
 	producer sarama.SyncProducer
 }
 
-func Newproducer(ctx context.Context, topic string, brokers []string) (SyncProducer, error) {
+func NewSyncProducer(ctx context.Context, topic string, brokers []string) (SyncProducer, error) {
 	config := sarama.NewConfig()
 	config.Producer.Return.Successes = true
 	config.Producer.RequiredAcks = sarama.WaitForAll

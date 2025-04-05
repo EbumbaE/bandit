@@ -12,7 +12,7 @@ import (
 )
 
 type DillerProvider interface {
-	GetRuleData(ctx context.Context, service, ctxKey string) ([]byte, error)
+	GetRuleData(ctx context.Context, service, ctxKey string) ([]byte, []byte, error)
 	GetRuleStatistic(ctx context.Context, service, ctxKey string) ([]model.Variant, error)
 }
 
@@ -36,13 +36,14 @@ func (i *Implementation) GetRuleData(ctx context.Context, req *desc.GetRuleReque
 		return nil, status.Error(codes.InvalidArgument, "empty service or context")
 	}
 
-	ruleData, err := i.dillerProvider.GetRuleData(ctx, req.GetService(), req.GetContext())
+	ruleData, payload, err := i.dillerProvider.GetRuleData(ctx, req.GetService(), req.GetContext())
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	return &desc.GetRuleDataResponse{
-		Data: ruleData,
+		Data:    ruleData,
+		Payload: payload,
 	}, nil
 }
 
