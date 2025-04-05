@@ -13,12 +13,11 @@ import (
 )
 
 type Storage interface {
-	GetRuleVariants(ctx context.Context, key string) ([]model.Variant, error)
-	GetRuleVersion(ctx context.Context, key string) (uint64, error)
+	GetRuleVariants(ctx context.Context, service, context string, withData bool) ([]model.Variant, error)
+	GetRuleVersion(ctx context.Context, service, context string) (uint64, error)
+	GetVariantData(ctx context.Context, service, context, variantID string) ([]byte, error)
 
-	GetVariantData(ctx context.Context, key string) ([]byte, error)
-	GetVariantCount(ctx context.Context, key string) (uint64, error)
-	IncVariantCount(ctx context.Context, key string) error
+	IncVariantCount(ctx context.Context, service, context, variantID string) error
 }
 
 type Provider struct {
@@ -32,36 +31,24 @@ func NewProvider(storage Storage) *Provider {
 }
 
 func (p *Provider) GetRuleData(ctx context.Context, service, ctxKey string) ([]byte, []byte, error) {
-	key := model.RuleKey{
-		Service: service,
-		Context: ctxKey,
-	}.GetKey()
-
-	variants, err := p.storage.GetRuleVariants(ctx, key)
+	variants, err := p.storage.GetRuleVariants(ctx, service, ctxKey, false)
 	if err != nil {
-		return nil, nil, errors.Wrapf(err, "GetRuleVariants for key[%s]", key)
-	}
-
-	for i, v := range variants {
-		variants[i].Count, err = p.storage.GetVariantCount(ctx, v.Key)
-		if err != nil {
-			logger.Error("GetVariantCount", zap.String("variant_key", v.Key), zap.Error(err))
-		}
+		return nil, nil, errors.Wrapf(err, "GetRuleVariants for service[%s], context[%s]", service, ctxKey)
 	}
 
 	options := convertToProperties(variants)
 	selectedKey := bandit.SelectByProbabilities(options, bandit.DefaultExplorationFactor)
 
-	if err := p.storage.IncVariantCount(ctx, selectedKey); err != nil {
+	if err := p.storage.IncVariantCount(ctx, service, ctxKey, selectedKey); err != nil {
 		logger.Error("IncVariantCount", zap.String("variant_key", selectedKey), zap.Error(err))
 	}
 
-	version, err := p.storage.GetRuleVersion(ctx, selectedKey)
+	version, err := p.storage.GetRuleVersion(ctx, service, ctxKey)
 	if err != nil {
 		logger.Error("GetRuleVersion", zap.String("variant_key", selectedKey), zap.Error(err))
 	}
 
-	data, err := p.storage.GetVariantData(ctx, selectedKey)
+	data, err := p.storage.GetVariantData(ctx, service, ctxKey, selectedKey)
 	if err != nil {
 		return nil, nil, errors.Wrapf(err, "GetVariantData for variant[%s]", selectedKey)
 	}
@@ -93,26 +80,9 @@ func convertToProperties(variants []model.Variant) map[string]bandit.Probability
 }
 
 func (p *Provider) GetRuleStatistic(ctx context.Context, service, ctxKey string) ([]model.Variant, error) {
-	key := model.RuleKey{
-		Service: service,
-		Context: ctxKey,
-	}.GetKey()
-
-	variants, err := p.storage.GetRuleVariants(ctx, key)
+	variants, err := p.storage.GetRuleVariants(ctx, service, ctxKey, true)
 	if err != nil {
-		return nil, errors.Wrapf(err, "GetRuleVariants for key[%s]", key)
-	}
-
-	for i, v := range variants {
-		variants[i].Count, err = p.storage.GetVariantCount(ctx, v.Key)
-		if err != nil {
-			logger.Error("GetVariantCount", zap.String("variant_key", v.Key), zap.Error(err))
-		}
-
-		variants[i].Data, err = p.storage.GetVariantData(ctx, v.Key)
-		if err != nil {
-			logger.Error("GetVariantData", zap.String("variant_key", v.Key), zap.Error(err))
-		}
+		return nil, errors.Wrapf(err, "GetRuleVariants for service[%s], context[%s]", service, ctxKey)
 	}
 
 	return variants, nil

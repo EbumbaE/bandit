@@ -26,7 +26,7 @@ type clients struct {
 }
 
 type connections struct {
-	redisConn redis.Client
+	redisConn *redis.Client
 }
 
 type repositories struct {

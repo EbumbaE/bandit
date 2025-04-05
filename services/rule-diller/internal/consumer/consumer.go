@@ -13,11 +13,8 @@ type Indexer interface {
 }
 
 type Storage interface {
-	SaveRuleVariants(ctx context.Context, key string, variants []model.Variant) error
-	SaveRuleVersion(ctx context.Context, key string, version uint64) error
-
-	SaveVariantData(ctx context.Context, key string, data []byte) error
-	SetVariantCount(ctx context.Context, key string, count uint64) error
+	SaveRuleVariants(ctx context.Context, service, context string, variants []model.Variant) error
+	SaveRuleVersion(ctx context.Context, service, context string, version uint64) error
 }
 
 type Consumer struct {
@@ -47,25 +44,11 @@ func (c *Consumer) Handle(ctx context.Context, msg []byte) error {
 		return errors.Wrapf(err, "GetRule for rule[%s]", event.RuleID)
 	}
 
-	ruleKey := model.RuleKey{
-		Service: rule.Service,
-		Context: rule.Context,
-	}.GetKey()
-
-	if err = c.storage.SaveRuleVariants(ctx, ruleKey, rule.Variants); err != nil {
-		return errors.Wrapf(err, "SaveRuleVariants for ruleKey[%s], variants[%v]", ruleKey, rule.Variants)
+	if err = c.storage.SaveRuleVariants(ctx, rule.Service, rule.Context, rule.Variants); err != nil {
+		return errors.Wrapf(err, "SaveRuleVariants for service[%s], context[%s], variants[%v]", rule.Service, rule.Context, rule.Variants)
 	}
-	if err = c.storage.SaveRuleVersion(ctx, ruleKey, rule.Version); err != nil {
-		return errors.Wrapf(err, "SaveRuleVersion for ruleKey[%s], variants[%v]", ruleKey, rule.Version)
-	}
-
-	for _, v := range rule.Variants {
-		if err = c.storage.SaveVariantData(ctx, ruleKey, v.Data); err != nil {
-			return errors.Wrapf(err, "SaveVariantData for variant[%v]", v)
-		}
-		if err = c.storage.SetVariantCount(ctx, ruleKey, v.Count); err != nil {
-			return errors.Wrapf(err, "SetVariantCount for variant[%v]", v)
-		}
+	if err = c.storage.SaveRuleVersion(ctx, rule.Service, rule.Context, rule.Version); err != nil {
+		return errors.Wrapf(err, "SaveRuleVersion for service[%s], context[%s], variants[%v]", rule.Service, rule.Context, rule.Version)
 	}
 
 	return nil
