@@ -30,6 +30,10 @@ func initSchema(ctx context.Context, db psql.Database) error {
 			name TEXT NOT NULL,
 			description TEXT NOT NULL,
 			state TEXT NOT NULL,
+
+			bandit_key TEXT NOT NULL,
+			service TEXT NOT NULL,
+			context TEXT NOT NULL,
 			
 			created_at TIMESTAMP NOT NULL DEFAULT now(),
 			updated_at TIMESTAMP NOT NULL DEFAULT now(),

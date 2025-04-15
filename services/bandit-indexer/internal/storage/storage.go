@@ -33,15 +33,11 @@ func initSchema(ctx context.Context, db psql.Database) error {
 		);
 
 		CREATE TABLE IF NOT EXISTS bandit_info (
-			id UUID PRIMARY KEY,
-
 			rule_id UUID NOT NULL,
-			service TEXT NOT NULL,
-			context TEXT NOT NULL,
 			version BIGINT NOT NULL,
 			
-			config JSONB NOT NULL,
 			bandit_key TEXT NOT NULL,
+			config JSONB NOT NULL,
 			state TEXT NOT NULL,
 			
 			created_at TIMESTAMP NOT NULL DEFAULT now(),
@@ -51,13 +47,12 @@ func initSchema(ctx context.Context, db psql.Database) error {
 		CREATE UNIQUE INDEX IF NOT EXISTS bandit_info_rule_id ON bandit_info(rule_id);
 			
 		CREATE TABLE IF NOT EXISTS arm_info (
-			id UUID PRIMARY KEY,
-			
 			variant_id UUID  NOT NULL,
+			rule_id TEXT NOT NULL,
+
 			data JSONB NOT NULL,
 			count BIGINT NOT NULL,
 			
-			bandit_id TEXT NOT NULL,
 			config JSONB,
 			state TEXT NOT NULL,
 			
