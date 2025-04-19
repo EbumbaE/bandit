@@ -20,13 +20,16 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	RuleAdminService_GetRule_FullMethodName         = "/bandit.services.ruleadmin.RuleAdminService/GetRule"
-	RuleAdminService_CreateRule_FullMethodName      = "/bandit.services.ruleadmin.RuleAdminService/CreateRule"
-	RuleAdminService_UpdateRule_FullMethodName      = "/bandit.services.ruleadmin.RuleAdminService/UpdateRule"
-	RuleAdminService_SetRuleState_FullMethodName    = "/bandit.services.ruleadmin.RuleAdminService/SetRuleState"
-	RuleAdminService_GetVariant_FullMethodName      = "/bandit.services.ruleadmin.RuleAdminService/GetVariant"
-	RuleAdminService_AddVariant_FullMethodName      = "/bandit.services.ruleadmin.RuleAdminService/AddVariant"
-	RuleAdminService_SetVariantState_FullMethodName = "/bandit.services.ruleadmin.RuleAdminService/SetVariantState"
+	RuleAdminService_GetRule_FullMethodName               = "/bandit.services.ruleadmin.RuleAdminService/GetRule"
+	RuleAdminService_CreateRule_FullMethodName            = "/bandit.services.ruleadmin.RuleAdminService/CreateRule"
+	RuleAdminService_UpdateRule_FullMethodName            = "/bandit.services.ruleadmin.RuleAdminService/UpdateRule"
+	RuleAdminService_SetRuleState_FullMethodName          = "/bandit.services.ruleadmin.RuleAdminService/SetRuleState"
+	RuleAdminService_GetRuleServiceContext_FullMethodName = "/bandit.services.ruleadmin.RuleAdminService/GetRuleServiceContext"
+	RuleAdminService_GetVariant_FullMethodName            = "/bandit.services.ruleadmin.RuleAdminService/GetVariant"
+	RuleAdminService_AddVariant_FullMethodName            = "/bandit.services.ruleadmin.RuleAdminService/AddVariant"
+	RuleAdminService_SetVariantState_FullMethodName       = "/bandit.services.ruleadmin.RuleAdminService/SetVariantState"
+	RuleAdminService_CreateWantedBandit_FullMethodName    = "/bandit.services.ruleadmin.RuleAdminService/CreateWantedBandit"
+	RuleAdminService_GetWantedRegistry_FullMethodName     = "/bandit.services.ruleadmin.RuleAdminService/GetWantedRegistry"
 )
 
 // RuleAdminServiceClient is the client API for RuleAdminService service.
@@ -37,9 +40,12 @@ type RuleAdminServiceClient interface {
 	CreateRule(ctx context.Context, in *ModifyRuleRequest, opts ...grpc.CallOption) (*RuleResponse, error)
 	UpdateRule(ctx context.Context, in *ModifyRuleRequest, opts ...grpc.CallOption) (*RuleResponse, error)
 	SetRuleState(ctx context.Context, in *SetRuleStateRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	GetRuleServiceContext(ctx context.Context, in *GetRuleRequest, opts ...grpc.CallOption) (*GetRuleServiceContextResponse, error)
 	GetVariant(ctx context.Context, in *GetVariantRequest, opts ...grpc.CallOption) (*VariantResponse, error)
 	AddVariant(ctx context.Context, in *AddVariantRequest, opts ...grpc.CallOption) (*VariantResponse, error)
 	SetVariantState(ctx context.Context, in *SetVariantStateRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	CreateWantedBandit(ctx context.Context, in *CreateWantedBanditRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	GetWantedRegistry(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetWantedRegistryResponse, error)
 }
 
 type ruleAdminServiceClient struct {
@@ -86,6 +92,15 @@ func (c *ruleAdminServiceClient) SetRuleState(ctx context.Context, in *SetRuleSt
 	return out, nil
 }
 
+func (c *ruleAdminServiceClient) GetRuleServiceContext(ctx context.Context, in *GetRuleRequest, opts ...grpc.CallOption) (*GetRuleServiceContextResponse, error) {
+	out := new(GetRuleServiceContextResponse)
+	err := c.cc.Invoke(ctx, RuleAdminService_GetRuleServiceContext_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *ruleAdminServiceClient) GetVariant(ctx context.Context, in *GetVariantRequest, opts ...grpc.CallOption) (*VariantResponse, error) {
 	out := new(VariantResponse)
 	err := c.cc.Invoke(ctx, RuleAdminService_GetVariant_FullMethodName, in, out, opts...)
@@ -113,6 +128,24 @@ func (c *ruleAdminServiceClient) SetVariantState(ctx context.Context, in *SetVar
 	return out, nil
 }
 
+func (c *ruleAdminServiceClient) CreateWantedBandit(ctx context.Context, in *CreateWantedBanditRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, RuleAdminService_CreateWantedBandit_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *ruleAdminServiceClient) GetWantedRegistry(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetWantedRegistryResponse, error) {
+	out := new(GetWantedRegistryResponse)
+	err := c.cc.Invoke(ctx, RuleAdminService_GetWantedRegistry_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // RuleAdminServiceServer is the server API for RuleAdminService service.
 // All implementations must embed UnimplementedRuleAdminServiceServer
 // for forward compatibility
@@ -121,9 +154,12 @@ type RuleAdminServiceServer interface {
 	CreateRule(context.Context, *ModifyRuleRequest) (*RuleResponse, error)
 	UpdateRule(context.Context, *ModifyRuleRequest) (*RuleResponse, error)
 	SetRuleState(context.Context, *SetRuleStateRequest) (*emptypb.Empty, error)
+	GetRuleServiceContext(context.Context, *GetRuleRequest) (*GetRuleServiceContextResponse, error)
 	GetVariant(context.Context, *GetVariantRequest) (*VariantResponse, error)
 	AddVariant(context.Context, *AddVariantRequest) (*VariantResponse, error)
 	SetVariantState(context.Context, *SetVariantStateRequest) (*emptypb.Empty, error)
+	CreateWantedBandit(context.Context, *CreateWantedBanditRequest) (*emptypb.Empty, error)
+	GetWantedRegistry(context.Context, *emptypb.Empty) (*GetWantedRegistryResponse, error)
 	mustEmbedUnimplementedRuleAdminServiceServer()
 }
 
@@ -143,6 +179,9 @@ func (UnimplementedRuleAdminServiceServer) UpdateRule(context.Context, *ModifyRu
 func (UnimplementedRuleAdminServiceServer) SetRuleState(context.Context, *SetRuleStateRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SetRuleState not implemented")
 }
+func (UnimplementedRuleAdminServiceServer) GetRuleServiceContext(context.Context, *GetRuleRequest) (*GetRuleServiceContextResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetRuleServiceContext not implemented")
+}
 func (UnimplementedRuleAdminServiceServer) GetVariant(context.Context, *GetVariantRequest) (*VariantResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetVariant not implemented")
 }
@@ -151,6 +190,12 @@ func (UnimplementedRuleAdminServiceServer) AddVariant(context.Context, *AddVaria
 }
 func (UnimplementedRuleAdminServiceServer) SetVariantState(context.Context, *SetVariantStateRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SetVariantState not implemented")
+}
+func (UnimplementedRuleAdminServiceServer) CreateWantedBandit(context.Context, *CreateWantedBanditRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateWantedBandit not implemented")
+}
+func (UnimplementedRuleAdminServiceServer) GetWantedRegistry(context.Context, *emptypb.Empty) (*GetWantedRegistryResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetWantedRegistry not implemented")
 }
 func (UnimplementedRuleAdminServiceServer) mustEmbedUnimplementedRuleAdminServiceServer() {}
 
@@ -237,6 +282,24 @@ func _RuleAdminService_SetRuleState_Handler(srv interface{}, ctx context.Context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _RuleAdminService_GetRuleServiceContext_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetRuleRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RuleAdminServiceServer).GetRuleServiceContext(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: RuleAdminService_GetRuleServiceContext_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RuleAdminServiceServer).GetRuleServiceContext(ctx, req.(*GetRuleRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _RuleAdminService_GetVariant_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetVariantRequest)
 	if err := dec(in); err != nil {
@@ -291,6 +354,42 @@ func _RuleAdminService_SetVariantState_Handler(srv interface{}, ctx context.Cont
 	return interceptor(ctx, in, info, handler)
 }
 
+func _RuleAdminService_CreateWantedBandit_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateWantedBanditRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RuleAdminServiceServer).CreateWantedBandit(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: RuleAdminService_CreateWantedBandit_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RuleAdminServiceServer).CreateWantedBandit(ctx, req.(*CreateWantedBanditRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _RuleAdminService_GetWantedRegistry_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RuleAdminServiceServer).GetWantedRegistry(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: RuleAdminService_GetWantedRegistry_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RuleAdminServiceServer).GetWantedRegistry(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // RuleAdminService_ServiceDesc is the grpc.ServiceDesc for RuleAdminService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -315,6 +414,10 @@ var RuleAdminService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _RuleAdminService_SetRuleState_Handler,
 		},
 		{
+			MethodName: "GetRuleServiceContext",
+			Handler:    _RuleAdminService_GetRuleServiceContext_Handler,
+		},
+		{
 			MethodName: "GetVariant",
 			Handler:    _RuleAdminService_GetVariant_Handler,
 		},
@@ -325,6 +428,14 @@ var RuleAdminService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SetVariantState",
 			Handler:    _RuleAdminService_SetVariantState_Handler,
+		},
+		{
+			MethodName: "CreateWantedBandit",
+			Handler:    _RuleAdminService_CreateWantedBandit_Handler,
+		},
+		{
+			MethodName: "GetWantedRegistry",
+			Handler:    _RuleAdminService_GetWantedRegistry_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

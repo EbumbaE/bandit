@@ -24,16 +24,8 @@ func New(ctx context.Context, conn psql.Database) (*Storage, error) {
 
 func initSchema(ctx context.Context, db psql.Database) error {
 	query := `
-		CREATE TABLE IF NOT EXISTS wanted_registry (
-			key TEXT NOT NULL PRIMARY KEY,
-			name TEXT NOT NULL,
-			
-			created_at TIMESTAMP NOT NULL DEFAULT now(),
-			deleted_at TIMESTAMP
-		);
-
 		CREATE TABLE IF NOT EXISTS bandit_info (
-			rule_id UUID NOT NULL,
+			rule_id UUID NOT NULL PRIMARY KEY,
 			version BIGINT NOT NULL,
 			
 			bandit_key TEXT NOT NULL,
@@ -44,13 +36,11 @@ func initSchema(ctx context.Context, db psql.Database) error {
 			updated_at TIMESTAMP NOT NULL DEFAULT now(),
 			deleted_at TIMESTAMP
 		);
-		CREATE UNIQUE INDEX IF NOT EXISTS bandit_info_rule_id ON bandit_info(rule_id);
 			
 		CREATE TABLE IF NOT EXISTS arm_info (
-			variant_id UUID  NOT NULL,
+			variant_id UUID  NOT NULL PRIMARY KEY,
 			rule_id TEXT NOT NULL,
 
-			data JSONB NOT NULL,
 			count BIGINT NOT NULL,
 			
 			config JSONB,
@@ -60,7 +50,7 @@ func initSchema(ctx context.Context, db psql.Database) error {
 			deleted_at TIMESTAMP
 		);
 		
-		CREATE INDEX IF NOT EXISTS arm_info_bandit_id ON arm_info(bandit_id);
+		CREATE INDEX IF NOT EXISTS arm_info_rule_id ON arm_info(rule_id);
 `
 
 	_, err := db.Exec(ctx, query)
@@ -71,7 +61,7 @@ func (s *Storage) GetBanditByRuleID(ctx context.Context, ruleID string) (model.B
 	var r model.Bandit
 
 	query := `
-		SELECT id, rule_id, service, context, config, bandit_key, state
+		SELECT rule_id, version, bandit_key, config, state
 		FROM bandit_info
 		WHERE rule_id = $1;
 		`
@@ -85,26 +75,31 @@ func (s *Storage) CreateBandit(ctx context.Context, bandit model.Bandit) (model.
 	query := `
 		INSERT INTO bandit_info
 		(
-			id, created_at, updated_at,
-			rule_id, service, context, config, bandit_key, state
+			created_at, updated_at,
+			rule_id, bandit_key, config, state
 		)
 		VALUES
 		(
-			gen_random_uuid(), NOW() at time zone 'utc', NOW() at time zone 'utc',
-			$1, $2, $3, $4, $5, $6
+			NOW() at time zone 'utc', NOW() at time zone 'utc',
+			$1, $2, $3, $4
 		)
-		RETURNING id;
+		RETURNING rule_id;
 `
 
-	var id string
-	err := s.conn.QueryRow(ctx, query, bandit.RuleId, bandit.Service, bandit.Context, bandit.Config, bandit.BanditKey, bandit.State).Scan(&id)
+	var ruleID string
+	err := s.conn.QueryRow(ctx, query, bandit.RuleId, bandit.BanditKey, bandit.Config, bandit.State).Scan(&ruleID)
+	if err != nil {
+		return model.Bandit{}, err
+	}
 
-	bandit.Id = id
+	if ruleID != bandit.RuleId {
+		return model.Bandit{}, errors.New("invalid create")
+	}
 
-	return bandit, err
+	return bandit, nil
 }
 
-func (s *Storage) SetBanditStateByRuleID(ctx context.Context, ruleID string, state model.StateType) error {
+func (s *Storage) SetBanditState(ctx context.Context, ruleID string, state model.StateType) error {
 	query := `
 		UPDATE bandit_info 
 		SET 
@@ -118,44 +113,49 @@ func (s *Storage) SetBanditStateByRuleID(ctx context.Context, ruleID string, sta
 	return err
 }
 
-func (s *Storage) GetArms(ctx context.Context, banditID string) ([]model.Arm, error) {
+func (s *Storage) GetArms(ctx context.Context, ruleID string) ([]model.Arm, error) {
 	var v []model.Arm
 
 	query := `
-		SELECT id, data, count, variant_id, config, state
+		SELECT variant_id, count, config, state
 		FROM arm_info
-		WHERE bandit_id = $1;
+		WHERE rule_id = $1;
 `
 
-	err := s.conn.GetSlice(ctx, &v, query, banditID)
+	err := s.conn.GetSlice(ctx, &v, query, ruleID)
 
 	return v, err
 }
 
-func (s *Storage) AddArm(ctx context.Context, banditID string, v model.Arm) (model.Arm, error) {
+func (s *Storage) AddArm(ctx context.Context, ruleID string, v model.Arm) (model.Arm, error) {
 	query := `
 		INSERT INTO arm_info
 		(
-			id, created_at,
-			bandit_id, data, count, variant_id, config, state
+			created_at,
+			rule_id, variant_id, config, state
 		)
 		VALUES
 		(
-			gen_random_uuid(), NOW() at time zone 'utc', 
-			$1, $2, $3, $4, $5, $6
+			NOW() at time zone 'utc', 
+			$1, $2, $3, $4
 		)
-		RETURNING id;
+		RETURNING variant_id;
 `
 
-	var id string
-	err := s.conn.QueryRow(ctx, query, banditID, v.Data, v.Count, v.VariantId, v.Config, v.State).Scan(&id)
+	var variantID string
+	err := s.conn.QueryRow(ctx, query, ruleID, v.VariantId, v.Config, v.State).Scan(&variantID)
+	if err != nil {
+		return model.Arm{}, err
+	}
 
-	v.Id = id
+	if v.VariantId != variantID {
+		return model.Arm{}, errors.New("invalid create")
+	}
 
-	return v, err
+	return v, nil
 }
 
-func (s *Storage) SetArmStateByVariantID(ctx context.Context, variantID string, state model.StateType) error {
+func (s *Storage) SetArmState(ctx context.Context, variantID string, state model.StateType) error {
 	query := `
 		UPDATE arm_info 
 		SET 

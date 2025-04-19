@@ -11,6 +11,8 @@ import (
 	"gonum.org/v1/gonum/stat/distuv"
 )
 
+const DefaultExplorationFactor = 0.1
+
 func init() {
 	rand.Seed(uint64(time.Now().UnixNano()))
 }
@@ -116,8 +118,6 @@ func (gb *GaussianBandit) Select(arms map[string]*ArmParams) string {
 	}
 	return selected
 }
-
-const DefaultExplorationFactor = 0.1
 
 type Probability struct {
 	Score float64

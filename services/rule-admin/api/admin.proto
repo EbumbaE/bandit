@@ -32,6 +32,11 @@ service RuleAdminService {
       body: "*"
     };
   };
+  rpc GetRuleServiceContext(GetRuleRequest) returns (GetRuleServiceContextResponse) {
+    option (google.api.http) = {
+      get: "/v1/admin/rule/{id}/context"
+    };
+  };
 
   rpc GetVariant(GetVariantRequest) returns (VariantResponse) {
     option (google.api.http) = {
@@ -48,6 +53,18 @@ service RuleAdminService {
     option (google.api.http) = {
       put: "/v1/admin/variant/state/{id}"
       body: "*"
+    };
+  };
+
+  rpc CreateWantedBandit(CreateWantedBanditRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/v1/admin/wanted-registry"
+      body: "*"
+    };
+  };
+  rpc GetWantedRegistry(google.protobuf.Empty) returns (GetWantedRegistryResponse) {
+    option (google.api.http) = {
+      get: "/v1/admin/wanted-registry"
     };
   };
 }
@@ -115,4 +132,22 @@ enum State {
   RULE_STATE_UNSPECIFIED = 0;
   RULE_STATE_ENABLED = 1;
   RULE_STATE_DISABLED = 2;
+}
+
+message GetRuleServiceContextResponse {
+  string service = 1;
+  string context = 2;
+}
+
+message WantedBandit {
+  string bandit_key = 1;
+  string name = 2;
+}
+
+message CreateWantedBanditRequest {
+  WantedBandit data = 1;
+}
+
+message GetWantedRegistryResponse {
+  repeated WantedBandit registry = 1;
 }

@@ -19,11 +19,16 @@ type Storage interface {
 	CreateRule(ctx context.Context, rule model.Rule) (model.Rule, error)
 	UpdateRule(ctx context.Context, rule model.Rule) (model.Rule, error)
 	SetRuleState(ctx context.Context, id string, state model.StateType) error
+	GetRuleServiceContext(ctx context.Context, ruleID string) (string, string, error)
 
 	GetVariant(ctx context.Context, ruleID, variantID string) (model.Variant, error)
 	GetVariants(ctx context.Context, ruleID string) ([]model.Variant, error)
 	AddVariant(ctx context.Context, ruleID string, v model.Variant) (model.Variant, error)
 	SetVariantState(ctx context.Context, id string, state model.StateType) error
+
+	CreateWantedBandit(ctx context.Context, wb model.WantedBandit) error
+	GetWantedRegistry(ctx context.Context) ([]model.WantedBandit, error)
+	CheckWantedBandit(ctx context.Context, banditKey string) (bool, error)
 }
 
 type Notifier interface {
@@ -65,7 +70,15 @@ func (p *Provider) CreateRule(ctx context.Context, r model.Rule) (model.Rule, er
 	span, ctx := opentracing.StartSpanFromContext(ctx, "provider/CreateRule")
 	defer span.Finish()
 
-	r, err := p.storage.CreateRule(ctx, r)
+	ok, err := p.storage.CheckWantedBandit(ctx, r.BanditKey)
+	if err != nil {
+		return model.Rule{}, err
+	}
+	if !ok {
+		return model.Rule{}, errors.New("validate bandit key")
+	}
+
+	r, err = p.storage.CreateRule(ctx, r)
 	if err != nil {
 		return model.Rule{}, err
 	}
@@ -137,7 +150,12 @@ func (p *Provider) AddVariant(ctx context.Context, ruleID string, v model.Varian
 	span, ctx := opentracing.StartSpanFromContext(ctx, "provider/AddVariant")
 	defer span.Finish()
 
-	v, err := p.storage.AddVariant(ctx, ruleID, v)
+	_, err := p.GetRule(ctx, ruleID)
+	if err != nil {
+		return model.Variant{}, err
+	}
+
+	v, err = p.storage.AddVariant(ctx, ruleID, v)
 	if err != nil {
 		return model.Variant{}, err
 	}
@@ -169,4 +187,16 @@ func (p *Provider) SetVariantState(ctx context.Context, id string, state model.S
 	}
 
 	return nil
+}
+
+func (p *Provider) CreateWantedBandit(ctx context.Context, wb model.WantedBandit) error {
+	return p.storage.CreateWantedBandit(ctx, wb)
+}
+
+func (p *Provider) GetWantedRegistry(ctx context.Context) ([]model.WantedBandit, error) {
+	return p.storage.GetWantedRegistry(ctx)
+}
+
+func (p *Provider) GetRuleServiceContext(ctx context.Context, ruleID string) (string, string, error) {
+	return p.storage.GetRuleServiceContext(ctx, ruleID)
 }

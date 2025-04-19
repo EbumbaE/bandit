@@ -18,10 +18,14 @@ type AdminProvider interface {
 	CreateRule(ctx context.Context, rule model.Rule) (model.Rule, error)
 	UpdateRule(ctx context.Context, rule model.Rule) (model.Rule, error)
 	SetRuleState(ctx context.Context, id string, state model.StateType) error
+	GetRuleServiceContext(ctx context.Context, ruleID string) (string, string, error)
 
 	GetVariant(ctx context.Context, ruleID, variandID string) (model.Variant, error)
 	AddVariant(ctx context.Context, ruleID string, v model.Variant) (model.Variant, error)
 	SetVariantState(ctx context.Context, id string, state model.StateType) error
+
+	CreateWantedBandit(ctx context.Context, wb model.WantedBandit) error
+	GetWantedRegistry(ctx context.Context) ([]model.WantedBandit, error)
 }
 
 type Implementation struct {
@@ -140,6 +144,67 @@ func (i *Implementation) SetVariantState(ctx context.Context, req *desc.SetVaria
 	}
 
 	return nil, nil
+}
+
+func (i *Implementation) GetRuleServiceContext(ctx context.Context, req *desc.GetRuleRequest) (*desc.GetRuleServiceContextResponse, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "api/GetRuleServiceContext")
+	defer span.Finish()
+
+	if len(req.GetId()) == 0 {
+		return nil, status.Error(codes.InvalidArgument, "empty id")
+	}
+
+	service, context, err := i.ruleProvider.GetRuleServiceContext(ctx, req.GetId())
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	return &desc.GetRuleServiceContextResponse{
+		Service: service,
+		Context: context,
+	}, nil
+}
+
+func (i *Implementation) CreateWantedBandit(ctx context.Context, req *desc.CreateWantedBanditRequest) (*emptypb.Empty, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "api/CreateWantedBandit")
+	defer span.Finish()
+
+	if len(req.GetData().GetBanditKey()) == 0 || len(req.GetData().GetName()) == 0 {
+		return nil, status.Error(codes.InvalidArgument, "empty bantit key or name")
+	}
+
+	wb := model.WantedBandit{
+		BanditKey: req.GetData().GetBanditKey(),
+		Name:      req.GetData().GetName(),
+	}
+
+	err := i.ruleProvider.CreateWantedBandit(ctx, wb)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	return nil, nil
+}
+
+func (i *Implementation) GetWantedRegistry(ctx context.Context, req *emptypb.Empty) (*desc.GetWantedRegistryResponse, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "api/GetWantedRegistry")
+	defer span.Finish()
+
+	wr, err := i.ruleProvider.GetWantedRegistry(ctx)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	resp := &desc.GetWantedRegistryResponse{
+		Registry: make([]*desc.WantedBandit, len(wr)),
+	}
+	for i, b := range wr {
+		resp.Registry[i] = &desc.WantedBandit{
+			BanditKey: b.BanditKey,
+			Name:      b.Name,
+		}
+	}
+	return resp, nil
 }
 
 func encodeModifyRule(v *desc.ModifyRuleRequest) model.Rule {

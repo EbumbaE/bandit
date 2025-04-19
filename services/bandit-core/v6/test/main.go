@@ -58,7 +58,7 @@ func main() {
 
 		currentArms := memoryStorage.GetAll("rule1")
 
-		selectedArmID := bandit.SelectByProbabilities(gb.CalculateProbabilities(currentArms), 0.1)
+		selectedArmID := bandit.SelectByProbabilities(gb.CalculateProbabilities(currentArms), bandit.DefaultExplorationFactor)
 
 		var reward float64
 		switch selectedArmID {

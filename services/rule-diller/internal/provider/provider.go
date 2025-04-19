@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 
 	"github.com/EbumbaE/bandit/pkg/logger"
-	"github.com/EbumbaE/bandit/services/bandit-core/v5"
+	"github.com/EbumbaE/bandit/services/bandit-core/v6"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 

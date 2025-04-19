@@ -24,6 +24,14 @@ func New(ctx context.Context, conn psql.Database) (*Storage, error) {
 
 func initSchema(ctx context.Context, db psql.Database) error {
 	query := `
+		CREATE TABLE IF NOT EXISTS wanted_registry (
+			bandit_key TEXT NOT NULL PRIMARY KEY,
+			name TEXT NOT NULL,
+			
+			created_at TIMESTAMP NOT NULL DEFAULT now(),
+			deleted_at TIMESTAMP
+		);
+
 		CREATE TABLE IF NOT EXISTS rule_info (
 			id UUID PRIMARY KEY,
 
@@ -60,11 +68,55 @@ func initSchema(ctx context.Context, db psql.Database) error {
 	return err
 }
 
+func (s *Storage) GetWantedRegistry(ctx context.Context) ([]model.WantedBandit, error) {
+	var wr []model.WantedBandit
+
+	query := `
+		SELECT bandit_key, name
+		FROM wanted_registry;
+		`
+
+	err := s.conn.GetSlice(ctx, &wr, query)
+
+	return wr, err
+}
+
+func (s *Storage) CreateWantedBandit(ctx context.Context, wb model.WantedBandit) error {
+	query := `
+		INSERT INTO wanted_registry
+		(
+			created_at,
+			bandit_key, name
+		)
+		VALUES
+		(
+			NOW() at time zone 'utc',
+			$1, $2
+		);
+`
+
+	_, err := s.conn.Exec(ctx, query, wb.BanditKey, wb.Name)
+
+	return err
+}
+
+func (s *Storage) CheckWantedBandit(ctx context.Context, banditKey string) (bool, error) {
+	query := `
+		SELECT COUNT(*)
+		FROM wanted_registry
+		WHERE bandit_key = $1;
+`
+	var count int
+	err := s.conn.GetSingle(ctx, &count, query, banditKey)
+
+	return count == 1, err
+}
+
 func (s *Storage) GetRule(ctx context.Context, id string) (model.Rule, error) {
 	var r model.Rule
 
 	query := `
-		SELECT id, name, description, state
+		SELECT id, name, description, state, bandit_key, service, context
 		FROM rule_info
 		WHERE id = $1;
 		`
@@ -74,23 +126,37 @@ func (s *Storage) GetRule(ctx context.Context, id string) (model.Rule, error) {
 	return r, err
 }
 
+func (s *Storage) GetRuleServiceContext(ctx context.Context, ruleID string) (string, string, error) {
+	var r model.Rule
+
+	query := `
+		SELECT service, context
+		FROM rule_info
+		WHERE id = $1;
+`
+
+	err := s.conn.GetSingle(ctx, &r, query, ruleID)
+
+	return r.Service, r.Context, err
+}
+
 func (s *Storage) CreateRule(ctx context.Context, rule model.Rule) (model.Rule, error) {
 	query := `
 		INSERT INTO rule_info
 		(
 			id, created_at, updated_at,
-			name, description, state
+			name, description, state, bandit_key, service, context
 		)
 		VALUES
 		(
 			gen_random_uuid(), NOW() at time zone 'utc', NOW() at time zone 'utc',
-			$1, $2, $3
+			$1, $2, $3, $4, $5, $6
 		)
 		RETURNING id;
 `
 
 	var id string
-	err := s.conn.QueryRow(ctx, query, rule.Name, rule.Description, rule.State).Scan(&id)
+	err := s.conn.QueryRow(ctx, query, rule.Name, rule.Description, rule.State, rule.BanditKey, rule.Service, rule.Context).Scan(&id)
 
 	rule.Id = id
 
