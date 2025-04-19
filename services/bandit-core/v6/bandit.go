@@ -16,18 +16,19 @@ func init() {
 }
 
 type ArmParams struct {
+	Count     uint64  `json:"count"`
 	Mu        float64 `json:"mu"`
 	SigmaSq   float64 `json:"sigma_sq"`
-	N         int     `json:"n"`
-	TimeCount int     `json:"time_count"`
-	Version   uint64  `json:"version"`
 	Alpha     float64 `json:"alpha"`
 	Beta      float64 `json:"beta"`
+	TimeCount uint64  `json:"time_count"`
+	Version   uint64  `json:"version"`
 }
 
 type GaussianBandit struct {
 	BaseSigma         float64
 	MinSigma          float64
+	MinAlpha          float64
 	DecayFactor       float64
 	SigmaSmoothFactor float64
 	Version           uint64
@@ -37,6 +38,7 @@ func NewDefaultGaussianBandit() *GaussianBandit {
 	return &GaussianBandit{
 		BaseSigma:         0.5,
 		MinSigma:          0.1,
+		MinAlpha:          1.0 + 1e-8,
 		DecayFactor:       0.6,
 		SigmaSmoothFactor: 0.3,
 		Version:           1,
@@ -47,7 +49,7 @@ func DefaultArmParams() *ArmParams {
 	return &ArmParams{
 		Mu:        0.0,
 		SigmaSq:   1.0,
-		N:         0,
+		Count:     0,
 		TimeCount: 0,
 		Alpha:     2.0,
 		Beta:      1.0,
@@ -66,35 +68,19 @@ func (gb *GaussianBandit) Calculate(params *ArmParams, reward float64) *ArmParam
 	decayWeight := math.Pow(gb.DecayFactor, float64(versionDiff))
 	decayedReward := reward * decayWeight
 
-	oldN := params.N
-	newN := oldN + 1
-	newParams.N = newN
-	newParams.Mu = (float64(oldN)*params.Mu + decayedReward) / float64(newN)
+	oldCount := params.Count
+	newCount := oldCount + 1
+	newParams.Count = newCount
+	newParams.Mu = (float64(oldCount)*params.Mu + decayedReward) / float64(newCount)
 
 	delta := decayedReward - newParams.Mu
 	deltaSq := delta * delta
 
-	newAlpha := params.Alpha + decayWeight/2
-	newBeta := params.Beta + (deltaSq*decayWeight)/2
-	newParams.Alpha = newAlpha
-	newParams.Beta = newBeta
+	newParams.Alpha = max(gb.MinAlpha, params.Alpha+decayWeight/2)
+	newParams.Beta = params.Beta + (deltaSq*decayWeight)/2
 
-	if newAlpha > 1.0 {
-		newParams.SigmaSq = newBeta / (newAlpha - 1.0)
-	} else {
-		sumSq := float64(oldN)*params.SigmaSq + deltaSq*decayWeight
-		weightTotal := float64(oldN) + decayWeight
-
-		var newSigmaSq float64
-		if weightTotal > 0 {
-			newSigmaSq = sumSq / weightTotal
-		} else {
-			newSigmaSq = deltaSq
-		}
-
-		newParams.SigmaSq = params.SigmaSq + gb.SigmaSmoothFactor*(newSigmaSq-params.SigmaSq)
-	}
-
+	newParams.SigmaSq = newParams.Beta / (newParams.Alpha - 1.0)
+	newParams.SigmaSq = params.SigmaSq + gb.SigmaSmoothFactor*(newParams.SigmaSq-params.SigmaSq)
 	newParams.SigmaSq = math.Max(newParams.SigmaSq, gb.MinSigma*gb.MinSigma)
 
 	if params.Version == gb.Version {
@@ -113,14 +99,12 @@ func (gb *GaussianBandit) Select(arms map[string]*ArmParams) string {
 	for id, params := range arms {
 		sigma := gb.MinSigma
 
-		if params.N > 0 {
+		if params.Count > 0 {
 			var sigmaSq float64
-			if params.Alpha > 1.0 {
-				sigmaSq = distuv.InverseGamma{Alpha: params.Alpha, Beta: params.Beta}.Rand()
-			} else {
-				sigmaSq = params.SigmaSq
-			}
-			sigma = math.Sqrt(sigmaSq/float64(params.N)) + gb.BaseSigma*math.Log(float64(params.TimeCount)+2)
+			params.Alpha = max(gb.MinAlpha, params.Alpha)
+			sigmaSq = distuv.InverseGamma{Alpha: params.Alpha, Beta: params.Beta}.Rand()
+
+			sigma = math.Sqrt(sigmaSq/float64(params.Count)) + gb.BaseSigma*math.Log(float64(params.TimeCount)+2)
 			sigma = math.Max(sigma, gb.MinSigma)
 		}
 
@@ -179,7 +163,6 @@ func SelectByProbabilities(options map[string]Probability, explorationFactor flo
 }
 
 func (gb *GaussianBandit) CalculateProbabilities(arms map[string]*ArmParams) map[string]Probability {
-	total := 0.0
 	probs := make(map[string]Probability, len(arms))
 
 	samples := make(map[string]float64)
@@ -187,10 +170,10 @@ func (gb *GaussianBandit) CalculateProbabilities(arms map[string]*ArmParams) map
 
 	for armID, params := range arms {
 		var sample float64
-		if params.N == 0 {
+		if params.Count == 0 {
 			sample = distuv.Normal{Mu: 0, Sigma: gb.MinSigma}.Rand()
 		} else {
-			sigma := math.Sqrt(params.SigmaSq / float64(params.N))
+			sigma := math.Sqrt(params.SigmaSq / float64(params.Count))
 			sample = distuv.Normal{Mu: params.Mu, Sigma: sigma}.Rand()
 		}
 
@@ -198,15 +181,15 @@ func (gb *GaussianBandit) CalculateProbabilities(arms map[string]*ArmParams) map
 		maxSample = max(maxSample, sample)
 	}
 
+	totalExpSample := float64(0.0)
 	for armID, sample := range samples {
-		adjustedSample := sample - maxSample
-		expSample := math.Exp(adjustedSample)
-		probs[armID] = Probability{Score: expSample, Count: uint64(arms[armID].N)}
-		total += expSample
+		expSample := math.Exp(sample - maxSample)
+		probs[armID] = Probability{Score: expSample, Count: uint64(arms[armID].Count)}
+		totalExpSample += expSample
 	}
 
 	for armID, prob := range probs {
-		prob.Score /= total
+		prob.Score /= totalExpSample
 		probs[armID] = prob
 	}
 
@@ -246,7 +229,7 @@ func (s *armSerializer) Deserialize(data []byte) (*ArmParams, error) {
 		return nil, errors.New("unmarshal params")
 	}
 
-	if params.N < 0 {
+	if params.Count < 0 {
 		return nil, errors.New("invalid N value in deserialized data")
 	}
 	if params.SigmaSq < 0 {
