@@ -7,9 +7,7 @@ type Bandit struct {
 	BanditKey string    `db:"bandit_key"`
 	State     StateType `db:"state"`
 
-	Service string
-	Context string
-	Arms    []Arm
+	Arms []Arm
 }
 
 type Arm struct {

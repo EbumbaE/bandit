@@ -72,7 +72,6 @@ func decodeScores(in []model.Variant) []*desc.VariantScore {
 		res = append(res, &desc.VariantScore{
 			VariantId: v.Key,
 			Score:     v.Score,
-			Data:      v.Data,
 		})
 	}
 

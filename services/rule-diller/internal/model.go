@@ -1,10 +1,11 @@
 package internal
 
 type Variant struct {
-	Key   string
-	Data  []byte
-	Score float64
-	Count uint64
+	Key    string
+	Data   []byte
+	Score  float64
+	Count  uint64
+	RuleID string
 }
 
 type PayloadAnalitic struct {

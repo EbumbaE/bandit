@@ -36,5 +36,4 @@ message GetRuleStatisticResponse {
 message VariantScore {
   string variant_id = 1;
   double score = 2; 
-  bytes data = 3;
 }

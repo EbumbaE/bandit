@@ -30,22 +30,20 @@ func (i *IndexerWrapper) GetRule(ctx context.Context, ruleID string) (model.Rule
 	}
 
 	return model.Rule{
-		Service:  rule.GetService(),
-		Context:  rule.GetContext(),
-		Variants: decodeVariants(rule.GetVariants()),
+		Variants: decodeVariants(ruleID, rule.GetVariants()),
 		Version:  rule.GetVersion(),
 	}, nil
 }
 
-func decodeVariants(in []*pb.Variant) []model.Variant {
+func decodeVariants(ruleID string, in []*pb.Variant) []model.Variant {
 	res := make([]model.Variant, len(in))
 
 	for i, v := range in {
 		res[i] = model.Variant{
-			Key:   v.GetId(),
-			Data:  v.GetData(),
-			Score: v.GetScore(),
-			Count: v.GetCount(),
+			Key:    v.GetId(),
+			Score:  v.GetScore(),
+			Count:  v.GetCount(),
+			RuleID: ruleID,
 		}
 	}
 

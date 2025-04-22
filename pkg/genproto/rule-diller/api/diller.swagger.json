@@ -130,10 +130,6 @@
         "score": {
           "type": "number",
           "format": "double"
-        },
-        "data": {
-          "type": "string",
-          "format": "byte"
         }
       }
     },

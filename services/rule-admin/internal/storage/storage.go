@@ -3,11 +3,14 @@ package storage
 import (
 	"context"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/pkg/errors"
 
 	"github.com/EbumbaE/bandit/pkg/psql"
 	model "github.com/EbumbaE/bandit/services/rule-admin/internal"
 )
+
+var ErrNotFound = pgx.ErrNoRows
 
 type Storage struct {
 	conn psql.Database
@@ -122,8 +125,13 @@ func (s *Storage) GetRule(ctx context.Context, id string) (model.Rule, error) {
 		`
 
 	err := s.conn.GetSingle(ctx, &r, query, id)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return model.Rule{}, ErrNotFound
+		}
+	}
 
-	return r, err
+	return r, nil
 }
 
 func (s *Storage) GetRuleServiceContext(ctx context.Context, ruleID string) (string, string, error) {
@@ -136,8 +144,13 @@ func (s *Storage) GetRuleServiceContext(ctx context.Context, ruleID string) (str
 `
 
 	err := s.conn.GetSingle(ctx, &r, query, ruleID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return "", "", ErrNotFound
+		}
+	}
 
-	return r.Service, r.Context, err
+	return r.Service, r.Context, nil
 }
 
 func (s *Storage) CreateRule(ctx context.Context, rule model.Rule) (model.Rule, error) {
@@ -202,8 +215,13 @@ func (s *Storage) GetVariant(ctx context.Context, ruleID, variantID string) (mod
 `
 
 	err := s.conn.GetSingle(ctx, &v, query, variantID, ruleID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return model.Variant{}, ErrNotFound
+		}
+	}
 
-	return v, err
+	return v, nil
 }
 
 func (s *Storage) GetVariants(ctx context.Context, ruleID string) ([]model.Variant, error) {
@@ -216,8 +234,13 @@ func (s *Storage) GetVariants(ctx context.Context, ruleID string) ([]model.Varia
 `
 
 	err := s.conn.GetSlice(ctx, &v, query, ruleID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrNotFound
+		}
+	}
 
-	return v, err
+	return v, nil
 }
 
 func (s *Storage) AddVariant(ctx context.Context, ruleID string, v model.Variant) (model.Variant, error) {

@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"encoding/json"
+	"errors"
 
 	"github.com/opentracing/opentracing-go"
 	"google.golang.org/grpc/codes"
@@ -11,6 +12,7 @@ import (
 
 	desc "github.com/EbumbaE/bandit/pkg/genproto/rule-admin/api"
 	model "github.com/EbumbaE/bandit/services/rule-admin/internal"
+	"github.com/EbumbaE/bandit/services/rule-admin/internal/storage"
 )
 
 type AdminProvider interface {
@@ -50,6 +52,9 @@ func (i *Implementation) GetRule(ctx context.Context, req *desc.GetRuleRequest) 
 
 	r, err := i.ruleProvider.GetRule(ctx, req.GetId())
 	if err != nil {
+		if errors.Is(err, storage.ErrNotFound) {
+			return nil, status.Error(codes.NotFound, err.Error())
+		}
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
@@ -103,16 +108,40 @@ func (i *Implementation) GetVariant(ctx context.Context, req *desc.GetVariantReq
 	span, ctx := opentracing.StartSpanFromContext(ctx, "api/GetVariant")
 	defer span.Finish()
 
-	if len(req.GetId()) == 0 {
+	if len(req.GetId()) == 0 || len(req.GetRuleId()) == 0 {
 		return nil, status.Error(codes.InvalidArgument, "empty id")
 	}
 
 	v, err := i.ruleProvider.GetVariant(ctx, req.GetRuleId(), req.GetId())
 	if err != nil {
+		if errors.Is(err, storage.ErrNotFound) {
+			return nil, status.Error(codes.NotFound, err.Error())
+		}
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	return decodeVariantResponse(v), nil
+}
+
+func (i *Implementation) GetVariantData(ctx context.Context, req *desc.GetVariantRequest) (*desc.VariantResponse, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "api/GetVariant")
+	defer span.Finish()
+
+	if len(req.GetId()) == 0 || len(req.GetRuleId()) == 0 {
+		return nil, status.Error(codes.InvalidArgument, "empty id")
+	}
+
+	v, err := i.ruleProvider.GetVariant(ctx, req.GetRuleId(), req.GetId())
+	if err != nil {
+		if errors.Is(err, storage.ErrNotFound) {
+			return nil, status.Error(codes.NotFound, err.Error())
+		}
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	return &desc.VariantResponse{
+		Variant: &desc.Variant{Data: v.Data},
+	}, nil
 }
 
 func (i *Implementation) AddVariant(ctx context.Context, req *desc.AddVariantRequest) (*desc.VariantResponse, error) {
@@ -156,6 +185,9 @@ func (i *Implementation) GetRuleServiceContext(ctx context.Context, req *desc.Ge
 
 	service, context, err := i.ruleProvider.GetRuleServiceContext(ctx, req.GetId())
 	if err != nil {
+		if errors.Is(err, storage.ErrNotFound) {
+			return nil, status.Error(codes.NotFound, err.Error())
+		}
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
@@ -207,6 +239,44 @@ func (i *Implementation) GetWantedRegistry(ctx context.Context, req *emptypb.Emp
 	return resp, nil
 }
 
+func (i *Implementation) CheckRule(ctx context.Context, req *desc.CheckRequest) (*desc.CheckResponse, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "api/CheckRule")
+	defer span.Finish()
+
+	if len(req.GetId()) == 0 {
+		return nil, status.Error(codes.InvalidArgument, "empty id")
+	}
+
+	_, err := i.ruleProvider.GetRule(ctx, req.GetId())
+	if err != nil {
+		if errors.Is(err, storage.ErrNotFound) {
+			return &desc.CheckResponse{IsExist: false}, nil
+		}
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	return &desc.CheckResponse{IsExist: true}, nil
+}
+
+func (i *Implementation) CheckVariant(ctx context.Context, req *desc.CheckRequest) (*desc.CheckResponse, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "api/CheckRule")
+	defer span.Finish()
+
+	if len(req.GetId()) == 0 || len(req.GetVariantId()) == 0 {
+		return nil, status.Error(codes.InvalidArgument, "empty id")
+	}
+
+	_, err := i.ruleProvider.GetVariant(ctx, req.GetId(), req.GetVariantId())
+	if err != nil {
+		if errors.Is(err, storage.ErrNotFound) {
+			return &desc.CheckResponse{IsExist: false}, nil
+		}
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	return &desc.CheckResponse{IsExist: true}, nil
+}
+
 func encodeModifyRule(v *desc.ModifyRuleRequest) model.Rule {
 	return model.Rule{
 		Id:          v.Id,
@@ -226,6 +296,7 @@ func decodeRule(r model.Rule) *desc.Rule {
 		Id:          r.Id,
 		Name:        r.Name,
 		Description: r.Description,
+		BanditKey:   r.BanditKey,
 		State:       decodeStateType(r.State),
 		Variants:    decodeVariants(r.Variants),
 	}

@@ -147,6 +147,42 @@
         ]
       }
     },
+    "/v1/admin/rule/{id}/check": {
+      "get": {
+        "operationId": "RuleAdminService_ChechRule",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/ruleadminCheckResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "variant_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "RuleAdminService"
+        ]
+      }
+    },
     "/v1/admin/rule/{id}/context": {
       "get": {
         "operationId": "RuleAdminService_GetRuleServiceContext",
@@ -283,6 +319,78 @@
         ]
       }
     },
+    "/v1/admin/variant/{id}/check": {
+      "get": {
+        "operationId": "RuleAdminService_CheckVariant",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/ruleadminCheckResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "variant_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "RuleAdminService"
+        ]
+      }
+    },
+    "/v1/admin/variant/{id}/data": {
+      "get": {
+        "operationId": "RuleAdminService_GetVariantData",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/ruleadminVariantResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "rule_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "RuleAdminService"
+        ]
+      }
+    },
     "/v1/admin/wanted-registry": {
       "get": {
         "operationId": "RuleAdminService_GetWantedRegistry",
@@ -360,6 +468,14 @@
         }
       }
     },
+    "ruleadminCheckResponse": {
+      "type": "object",
+      "properties": {
+        "is_exist": {
+          "type": "boolean"
+        }
+      }
+    },
     "ruleadminCreateWantedBanditRequest": {
       "type": "object",
       "properties": {
@@ -418,6 +534,9 @@
         },
         "state": {
           "$ref": "#/definitions/ruleadminState"
+        },
+        "bandit_key": {
+          "type": "string"
         },
         "variants": {
           "type": "array",

@@ -68,6 +68,7 @@ type RuleAdminService struct {
 	GrpcAddress          string        `yaml:"rule_diller_address"`
 	SwaggerHost          string        `yaml:"swagger_host"`
 	BanditIndexerAddress string        `yaml:"bandit_indexer_address"`
+	RuleAdminAddress     string        `yaml:"rule_admin_address"`
 	ConnectionTimeout    time.Duration `yaml:"connection_timeout"`
 }
 

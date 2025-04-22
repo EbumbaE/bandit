@@ -9,12 +9,19 @@ import (
 )
 
 type Admin interface {
-	GetRule(ctx context.Context, ruleID string) (model.Rule, error)
+	GetBandit(ctx context.Context, ruleID string) (model.Bandit, error)
+	CheckBandit(ctx context.Context, ruleID string) (bool, error)
+	GetBanditState(ctx context.Context, ruleID string) (model.StateType, error)
+	CheckArm(ctx context.Context, ruleID, variantID string) (bool, error)
+	GetArm(ctx context.Context, ruleID, variantID string) (model.Arm, error)
+	GetArmState(ctx context.Context, ruleID, variantID string) (model.StateType, error)
 }
 
 type Storage interface {
-	SaveRuleVariants(ctx context.Context, service, context string, variants []model.Variant) error
-	SaveRuleVersion(ctx context.Context, service, context string, version uint64) error
+	CreateBandit(ctx context.Context, bandit model.Bandit) (model.Bandit, error)
+	SetBanditState(ctx context.Context, ruleID string, state model.StateType) error
+	AddArm(ctx context.Context, ruleID string, v model.Arm) (model.Arm, error)
+	SetArmState(ctx context.Context, variantID string, state model.StateType) error
 }
 
 type Consumer struct {

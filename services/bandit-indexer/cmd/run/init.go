@@ -13,7 +13,7 @@ import (
 	rule_admin_service "github.com/EbumbaE/bandit/services/bandit-indexer/app"
 	rule_admin_wrapper "github.com/EbumbaE/bandit/services/bandit-indexer/internal/client"
 	"github.com/EbumbaE/bandit/services/bandit-indexer/internal/provider"
-	rule_admin_storage "github.com/EbumbaE/bandit/services/bandit-indexer/internal/storage"
+	bandit_indexer_storage "github.com/EbumbaE/bandit/services/bandit-indexer/internal/storage"
 	"github.com/EbumbaE/bandit/services/bandit-indexer/server"
 )
 
@@ -26,7 +26,7 @@ type connections struct {
 }
 
 type repositories struct {
-	banditIndexer *rule_admin_storage.Storage
+	banditIndexer *bandit_indexer_storage.Storage
 }
 
 type consumers struct {
@@ -71,7 +71,7 @@ func (a *application) initConnections(ctx context.Context) {
 }
 
 func (a *application) initRepos(ctx context.Context) {
-	banditIndexer, err := rule_admin_storage.New(ctx, a.connections.db)
+	banditIndexer, err := bandit_indexer_storage.New(ctx, a.connections.db)
 	if err != nil {
 		logger.Fatal("init rule admin repo", zap.Error(err))
 	}
