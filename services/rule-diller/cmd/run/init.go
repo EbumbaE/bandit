@@ -9,12 +9,13 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 
 	bandit_indexer_client "github.com/EbumbaE/bandit/pkg/genproto/bandit-indexer/api"
+	rule_admin_client "github.com/EbumbaE/bandit/pkg/genproto/rule-admin/api"
 	"github.com/EbumbaE/bandit/pkg/kafka"
 	"github.com/EbumbaE/bandit/pkg/logger"
 	"github.com/EbumbaE/bandit/pkg/redis"
 
 	rule_diller_service "github.com/EbumbaE/bandit/services/rule-diller/app"
-	bandit_indexer_wrapper "github.com/EbumbaE/bandit/services/rule-diller/internal/client"
+	client_wrapper "github.com/EbumbaE/bandit/services/rule-diller/internal/client"
 	"github.com/EbumbaE/bandit/services/rule-diller/internal/consumer"
 	"github.com/EbumbaE/bandit/services/rule-diller/internal/provider"
 	rule_diller_storage "github.com/EbumbaE/bandit/services/rule-diller/internal/storage"
@@ -22,7 +23,8 @@ import (
 )
 
 type clients struct {
-	indexerWrapper *bandit_indexer_wrapper.IndexerWrapper
+	indexerWrapper *client_wrapper.IndexerWrapper
+	adminWrapper   *client_wrapper.AdminWrapper
 }
 
 type connections struct {
@@ -68,10 +70,17 @@ func newApp(ctx context.Context, cfg *Config) *application {
 func (a *application) initClients(ctx context.Context) {
 	conn, err := grpc.DialContext(ctx, a.cfg.Service.BanditIndexerAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		logger.Fatal("connect to rule-diller", zap.Error(err))
+		logger.Fatal("connect to bandit-indexer", zap.Error(err))
 	}
 
-	a.clients.indexerWrapper = bandit_indexer_wrapper.NewIndexerWrapper(bandit_indexer_client.NewBanditIndexerServiceClient(conn))
+	a.clients.indexerWrapper = client_wrapper.NewIndexerWrapper(bandit_indexer_client.NewBanditIndexerServiceClient(conn))
+
+	conn, err = grpc.DialContext(ctx, a.cfg.Service.BanditIndexerAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		logger.Fatal("connect to rule-admin", zap.Error(err))
+	}
+
+	a.clients.adminWrapper = client_wrapper.NewAdminWrapper(rule_admin_client.NewRuleAdminServiceClient(conn))
 }
 
 func (a *application) initConnections(ctx context.Context) {
@@ -95,10 +104,11 @@ func (a *application) initProvider() {
 }
 
 func (a *application) initConsumer(ctx context.Context) {
-	handler := consumer.NewConsumer(a.clients.indexerWrapper, a.repositories.ruleDiller)
+	handler := consumer.NewConsumer(a.clients.indexerWrapper, a.clients.adminWrapper, a.repositories.ruleDiller)
 
 	consumer, err := kafka.NewKafkaConsumer(ctx, a.cfg.Kafka.Brokers, a.cfg.Kafka.Topic, handler.Handle)
 	if err != nil {
+		logger.Fatal("init rule-diller indexer consumer", zap.Error(err))
 	}
 
 	go consumer.Consume(ctx)

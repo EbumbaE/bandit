@@ -5,7 +5,11 @@ type Rule struct {
 	Name        string    `db:"name"`
 	Description string    `db:"description"`
 	State       StateType `db:"state"`
-	Variants    []Variant
+	BanditKey   string    `db:"bandit_key"`
+	Service     string    `db:"service"`
+	Context     string    `db:"context"`
+
+	Variants []Variant
 }
 
 type StateType string
@@ -20,4 +24,9 @@ type Variant struct {
 	Name  string    `db:"name"`
 	Data  []byte    `db:"data"`
 	State StateType `db:"state"`
+}
+
+type WantedBandit struct {
+	BanditKey string `db:"bandit_key"`
+	Name      string `db:"name"`
 }

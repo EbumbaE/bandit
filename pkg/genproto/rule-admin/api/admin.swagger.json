@@ -147,6 +147,72 @@
         ]
       }
     },
+    "/v1/admin/rule/{id}/check": {
+      "get": {
+        "operationId": "RuleAdminService_ChechRule",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/ruleadminCheckResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "variant_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "RuleAdminService"
+        ]
+      }
+    },
+    "/v1/admin/rule/{id}/context": {
+      "get": {
+        "operationId": "RuleAdminService_GetRuleServiceContext",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/ruleadminGetRuleServiceContextResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "RuleAdminService"
+        ]
+      }
+    },
     "/v1/admin/variant": {
       "post": {
         "operationId": "RuleAdminService_AddVariant",
@@ -252,6 +318,130 @@
           "RuleAdminService"
         ]
       }
+    },
+    "/v1/admin/variant/{id}/check": {
+      "get": {
+        "operationId": "RuleAdminService_CheckVariant",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/ruleadminCheckResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "variant_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "RuleAdminService"
+        ]
+      }
+    },
+    "/v1/admin/variant/{id}/data": {
+      "get": {
+        "operationId": "RuleAdminService_GetVariantData",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/ruleadminVariantResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "rule_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "RuleAdminService"
+        ]
+      }
+    },
+    "/v1/admin/wanted-registry": {
+      "get": {
+        "operationId": "RuleAdminService_GetWantedRegistry",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/ruleadminGetWantedRegistryResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "tags": [
+          "RuleAdminService"
+        ]
+      },
+      "post": {
+        "operationId": "RuleAdminService_CreateWantedBandit",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ruleadminCreateWantedBanditRequest"
+            }
+          }
+        ],
+        "tags": [
+          "RuleAdminService"
+        ]
+      }
     }
   },
   "definitions": {
@@ -275,6 +465,44 @@
         },
         "variant": {
           "$ref": "#/definitions/ruleadminVariant"
+        }
+      }
+    },
+    "ruleadminCheckResponse": {
+      "type": "object",
+      "properties": {
+        "is_exist": {
+          "type": "boolean"
+        }
+      }
+    },
+    "ruleadminCreateWantedBanditRequest": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "$ref": "#/definitions/ruleadminWantedBandit"
+        }
+      }
+    },
+    "ruleadminGetRuleServiceContextResponse": {
+      "type": "object",
+      "properties": {
+        "service": {
+          "type": "string"
+        },
+        "context": {
+          "type": "string"
+        }
+      }
+    },
+    "ruleadminGetWantedRegistryResponse": {
+      "type": "object",
+      "properties": {
+        "registry": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ruleadminWantedBandit"
+          }
         }
       }
     },
@@ -306,6 +534,9 @@
         },
         "state": {
           "$ref": "#/definitions/ruleadminState"
+        },
+        "bandit_key": {
+          "type": "string"
         },
         "variants": {
           "type": "array",
@@ -380,6 +611,17 @@
       "properties": {
         "variant": {
           "$ref": "#/definitions/ruleadminVariant"
+        }
+      }
+    },
+    "ruleadminWantedBandit": {
+      "type": "object",
+      "properties": {
+        "bandit_key": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
         }
       }
     },

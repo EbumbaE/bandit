@@ -20,15 +20,12 @@ message GetRuleScoresRequest {
 }
 
 message GetRuleScoresResponse {
-  string service = 1;
-  string context = 2;
-  uint64 version = 3;
-  repeated Variant variants = 4; 
+  uint64 version = 1;
+  repeated Variant variants = 2; 
 }
 
 message Variant {
   string id = 1;
   double score = 2; 
-  bytes data = 3;
-  uint64 count = 4;
+  uint64 count = 3;
 }

@@ -18,7 +18,7 @@ import (
 	"github.com/EbumbaE/bandit/pkg/logger"
 )
 
-func InitRuleDillerSwagger(ctx context.Context, wg *sync.WaitGroup, swaggerAddr, swaggerHost, grpcHost string) {
+func InitBanditIndexerSwagger(ctx context.Context, wg *sync.WaitGroup, swaggerAddr, swaggerHost, grpcHost string) {
 	httpMux := http.NewServeMux()
 
 	relativePath := "./pkg/genproto/bandit-indexer/api/bandit-indexer.swagger.json"
@@ -69,7 +69,7 @@ func InitRuleDillerSwagger(ctx context.Context, wg *sync.WaitGroup, swaggerAddr,
 	}()
 }
 
-func StartRuleDiller(ctx context.Context, serv banditindexer.BanditIndexerServiceServer, wg *sync.WaitGroup, host string) {
+func StarBanditIndexer(ctx context.Context, serv banditindexer.BanditIndexerServiceServer, wg *sync.WaitGroup, host string) {
 	listener, err := net.Listen("tcp", host)
 	if err != nil {
 		logger.Error("failed to listen in sender server", zap.Error(err))

@@ -13,13 +13,13 @@ import (
 	"gonum.org/v1/plot/plotter"
 	"gonum.org/v1/plot/vg"
 
-	bandit "github.com/EbumbaE/bandit/services/bandit-core/v5"
+	bandit "github.com/EbumbaE/bandit/services/bandit-core/v6"
 )
 
 type ArmHistory struct {
 	Mu            []float64
 	SigmaSq       []float64
-	Count         []int
+	Count         []uint64
 	Probabilities []float64
 	Steps         []int
 }
@@ -58,7 +58,7 @@ func main() {
 
 		currentArms := memoryStorage.GetAll("rule1")
 
-		selectedArmID := bandit.SelectByProbabilities(gb.CalculateProbabilities(currentArms), 0.1)
+		selectedArmID := bandit.SelectByProbabilities(gb.CalculateProbabilities(currentArms), bandit.DefaultExplorationFactor)
 
 		var reward float64
 		switch selectedArmID {
@@ -88,7 +88,7 @@ func main() {
 
 			history[armID].Mu = append(history[armID].Mu, params.Mu)
 			history[armID].SigmaSq = append(history[armID].SigmaSq, params.SigmaSq)
-			history[armID].Count = append(history[armID].Count, params.N)
+			history[armID].Count = append(history[armID].Count, params.Count)
 			history[armID].Steps = append(history[armID].Steps, i)
 		}
 
@@ -105,7 +105,7 @@ func main() {
 
 	for armID, prob := range probs {
 		fmt.Printf("Arm: %s | Probability: %.4f | Count: %d\n",
-			armID, prob.Score, finalArms[armID].N)
+			armID, prob.Score, finalArms[armID].Count)
 	}
 	fmt.Printf("Arm: %s | Probability: %.4f | Count: %d\n", armNames[2], rememberProbs, rememberCount)
 

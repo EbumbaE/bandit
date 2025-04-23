@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"encoding/json"
+	"errors"
 
 	"github.com/opentracing/opentracing-go"
 	"google.golang.org/grpc/codes"
@@ -11,6 +12,7 @@ import (
 
 	desc "github.com/EbumbaE/bandit/pkg/genproto/rule-admin/api"
 	model "github.com/EbumbaE/bandit/services/rule-admin/internal"
+	"github.com/EbumbaE/bandit/services/rule-admin/internal/storage"
 )
 
 type AdminProvider interface {
@@ -18,10 +20,14 @@ type AdminProvider interface {
 	CreateRule(ctx context.Context, rule model.Rule) (model.Rule, error)
 	UpdateRule(ctx context.Context, rule model.Rule) (model.Rule, error)
 	SetRuleState(ctx context.Context, id string, state model.StateType) error
+	GetRuleServiceContext(ctx context.Context, ruleID string) (string, string, error)
 
 	GetVariant(ctx context.Context, ruleID, variandID string) (model.Variant, error)
 	AddVariant(ctx context.Context, ruleID string, v model.Variant) (model.Variant, error)
-	SetVariantState(ctx context.Context, id string, state model.StateType) error
+	SetVariantState(ctx context.Context, ruleID, variandID string, state model.StateType) error
+
+	CreateWantedBandit(ctx context.Context, wb model.WantedBandit) error
+	GetWantedRegistry(ctx context.Context) ([]model.WantedBandit, error)
 }
 
 type Implementation struct {
@@ -46,6 +52,9 @@ func (i *Implementation) GetRule(ctx context.Context, req *desc.GetRuleRequest) 
 
 	r, err := i.ruleProvider.GetRule(ctx, req.GetId())
 	if err != nil {
+		if errors.Is(err, storage.ErrNotFound) {
+			return nil, status.Error(codes.NotFound, err.Error())
+		}
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
@@ -99,16 +108,40 @@ func (i *Implementation) GetVariant(ctx context.Context, req *desc.GetVariantReq
 	span, ctx := opentracing.StartSpanFromContext(ctx, "api/GetVariant")
 	defer span.Finish()
 
-	if len(req.GetId()) == 0 {
+	if len(req.GetId()) == 0 || len(req.GetRuleId()) == 0 {
 		return nil, status.Error(codes.InvalidArgument, "empty id")
 	}
 
 	v, err := i.ruleProvider.GetVariant(ctx, req.GetRuleId(), req.GetId())
 	if err != nil {
+		if errors.Is(err, storage.ErrNotFound) {
+			return nil, status.Error(codes.NotFound, err.Error())
+		}
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	return decodeVariantResponse(v), nil
+}
+
+func (i *Implementation) GetVariantData(ctx context.Context, req *desc.GetVariantRequest) (*desc.VariantResponse, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "api/GetVariant")
+	defer span.Finish()
+
+	if len(req.GetId()) == 0 || len(req.GetRuleId()) == 0 {
+		return nil, status.Error(codes.InvalidArgument, "empty id")
+	}
+
+	v, err := i.ruleProvider.GetVariant(ctx, req.GetRuleId(), req.GetId())
+	if err != nil {
+		if errors.Is(err, storage.ErrNotFound) {
+			return nil, status.Error(codes.NotFound, err.Error())
+		}
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	return &desc.VariantResponse{
+		Variant: &desc.Variant{Data: v.Data},
+	}, nil
 }
 
 func (i *Implementation) AddVariant(ctx context.Context, req *desc.AddVariantRequest) (*desc.VariantResponse, error) {
@@ -131,15 +164,117 @@ func (i *Implementation) SetVariantState(ctx context.Context, req *desc.SetVaria
 	span, ctx := opentracing.StartSpanFromContext(ctx, "api/SetVariantState")
 	defer span.Finish()
 
-	if len(req.GetId()) == 0 {
+	if len(req.GetId()) == 0 || len(req.GetRuleId()) == 0 {
 		return nil, status.Error(codes.InvalidArgument, "empty id")
 	}
 
-	if err := i.ruleProvider.SetVariantState(ctx, req.GetId(), encodeStateType(req.GetState())); err != nil {
+	if err := i.ruleProvider.SetVariantState(ctx, req.GetId(), req.GetRuleId(), encodeStateType(req.GetState())); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	return nil, nil
+}
+
+func (i *Implementation) GetRuleServiceContext(ctx context.Context, req *desc.GetRuleRequest) (*desc.GetRuleServiceContextResponse, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "api/GetRuleServiceContext")
+	defer span.Finish()
+
+	if len(req.GetId()) == 0 {
+		return nil, status.Error(codes.InvalidArgument, "empty id")
+	}
+
+	service, context, err := i.ruleProvider.GetRuleServiceContext(ctx, req.GetId())
+	if err != nil {
+		if errors.Is(err, storage.ErrNotFound) {
+			return nil, status.Error(codes.NotFound, err.Error())
+		}
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	return &desc.GetRuleServiceContextResponse{
+		Service: service,
+		Context: context,
+	}, nil
+}
+
+func (i *Implementation) CreateWantedBandit(ctx context.Context, req *desc.CreateWantedBanditRequest) (*emptypb.Empty, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "api/CreateWantedBandit")
+	defer span.Finish()
+
+	if len(req.GetData().GetBanditKey()) == 0 || len(req.GetData().GetName()) == 0 {
+		return nil, status.Error(codes.InvalidArgument, "empty bantit key or name")
+	}
+
+	wb := model.WantedBandit{
+		BanditKey: req.GetData().GetBanditKey(),
+		Name:      req.GetData().GetName(),
+	}
+
+	err := i.ruleProvider.CreateWantedBandit(ctx, wb)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	return nil, nil
+}
+
+func (i *Implementation) GetWantedRegistry(ctx context.Context, req *emptypb.Empty) (*desc.GetWantedRegistryResponse, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "api/GetWantedRegistry")
+	defer span.Finish()
+
+	wr, err := i.ruleProvider.GetWantedRegistry(ctx)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	resp := &desc.GetWantedRegistryResponse{
+		Registry: make([]*desc.WantedBandit, len(wr)),
+	}
+	for i, b := range wr {
+		resp.Registry[i] = &desc.WantedBandit{
+			BanditKey: b.BanditKey,
+			Name:      b.Name,
+		}
+	}
+	return resp, nil
+}
+
+func (i *Implementation) CheckRule(ctx context.Context, req *desc.CheckRequest) (*desc.CheckResponse, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "api/CheckRule")
+	defer span.Finish()
+
+	if len(req.GetId()) == 0 {
+		return nil, status.Error(codes.InvalidArgument, "empty id")
+	}
+
+	_, err := i.ruleProvider.GetRule(ctx, req.GetId())
+	if err != nil {
+		if errors.Is(err, storage.ErrNotFound) {
+			return &desc.CheckResponse{IsExist: false}, nil
+		}
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	return &desc.CheckResponse{IsExist: true}, nil
+}
+
+func (i *Implementation) CheckVariant(ctx context.Context, req *desc.CheckRequest) (*desc.CheckResponse, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "api/CheckRule")
+	defer span.Finish()
+
+	if len(req.GetId()) == 0 || len(req.GetVariantId()) == 0 {
+		return nil, status.Error(codes.InvalidArgument, "empty id")
+	}
+
+	_, err := i.ruleProvider.GetVariant(ctx, req.GetId(), req.GetVariantId())
+	if err != nil {
+		if errors.Is(err, storage.ErrNotFound) {
+			return &desc.CheckResponse{IsExist: false}, nil
+		}
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	return &desc.CheckResponse{IsExist: true}, nil
 }
 
 func encodeModifyRule(v *desc.ModifyRuleRequest) model.Rule {
@@ -161,6 +296,7 @@ func decodeRule(r model.Rule) *desc.Rule {
 		Id:          r.Id,
 		Name:        r.Name,
 		Description: r.Description,
+		BanditKey:   r.BanditKey,
 		State:       decodeStateType(r.State),
 		Variants:    decodeVariants(r.Variants),
 	}

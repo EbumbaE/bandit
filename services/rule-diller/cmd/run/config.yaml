@@ -3,6 +3,7 @@ service:
   swagger_address: 0.0.0.0:8445
   swagger_host: rule.admin.swagger.bandit.ebumba.ru
   bandit_indexer_address: rule-diller:8443
+  rule_admin_address: rule-admin:8443
   connection_timeout: 10s
   only_cache_mode: false
 

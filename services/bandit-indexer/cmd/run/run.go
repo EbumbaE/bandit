@@ -60,6 +60,7 @@ func readConfig(configPath string) *Config {
 type Config struct {
 	Service  RuleAdminService `yaml:"service"`
 	Postgres Postgres         `yaml:"postgres"`
+	Kafka    Kafka            `yaml:"kafka"`
 }
 
 type RuleAdminService struct {
@@ -77,4 +78,11 @@ type Postgres struct {
 	DBName   string `yaml:"dbname"`
 	Password string
 	Dsn      string
+}
+
+type Kafka struct {
+	Brokers       []string `yaml:"brokers"`
+	AdminTopic    string   `yaml:"admin_topic"`
+	AnalyticTopic string   `yaml:"analytic_topic"`
+	IndexerTopic  string   `yaml:"indexer_topic"`
 }

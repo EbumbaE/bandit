@@ -34,7 +34,7 @@ func keyVariantData(service, context, variantID string) string {
 	return fmt.Sprintf("variant:%s:%s:%s", service, context, variantID)
 }
 
-func (s *Storage) SaveRuleVariants(ctx context.Context, service, context string, variants []model.Variant) error {
+func (s *Storage) SaveRuleVariants(ctx context.Context, service, context, ruleID string, variants []model.Variant) error {
 	pipe := s.conn.TxPipeline()
 
 	oldVariants, err := s.conn.ZRange(ctx, keyRuleVariants(service, context), 0, -1).Result()
@@ -67,7 +67,7 @@ func (s *Storage) SaveRuleVariants(ctx context.Context, service, context string,
 			Member: v.Key,
 		})
 
-		pipe.HSet(ctx, keyVariantData(service, context, v.Key), "data", v.Data, "count", 0)
+		pipe.HSet(ctx, keyVariantData(service, context, v.Key), "data", v.Data, "count", v.Count, "rule_id", ruleID)
 	}
 
 	_, err = pipe.Exec(ctx)
@@ -103,8 +103,9 @@ func (s *Storage) GetRuleVariants(ctx context.Context, service, context string, 
 
 	for _, variantID := range variantIDs {
 		var (
-			count uint64
-			data  []byte
+			count  uint64
+			data   []byte
+			ruleID string
 		)
 
 		if withData {
@@ -126,6 +127,9 @@ func (s *Storage) GetRuleVariants(ctx context.Context, service, context string, 
 			if d, ok := res["data"]; ok {
 				data = []byte(d)
 			}
+			if id, ok := res["rule_id"]; ok {
+				ruleID = string(id)
+			}
 		} else {
 			cmd, ok := cmds[variantID].(*redis.StringCmd)
 			if !ok {
@@ -143,10 +147,11 @@ func (s *Storage) GetRuleVariants(ctx context.Context, service, context string, 
 		}
 
 		variants = append(variants, model.Variant{
-			Key:   variantID,
-			Data:  data,
-			Count: count,
-			Score: score,
+			Key:    variantID,
+			Data:   data,
+			Count:  count,
+			Score:  score,
+			RuleID: ruleID,
 		})
 	}
 

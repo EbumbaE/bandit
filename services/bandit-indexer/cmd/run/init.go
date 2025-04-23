@@ -12,10 +12,20 @@ import (
 
 	rule_admin_service "github.com/EbumbaE/bandit/services/bandit-indexer/app"
 	rule_admin_wrapper "github.com/EbumbaE/bandit/services/bandit-indexer/internal/client"
+	indexer_consumer "github.com/EbumbaE/bandit/services/bandit-indexer/internal/consumer"
+	"github.com/EbumbaE/bandit/services/bandit-indexer/internal/notifier"
 	"github.com/EbumbaE/bandit/services/bandit-indexer/internal/provider"
-	rule_admin_storage "github.com/EbumbaE/bandit/services/bandit-indexer/internal/storage"
+	indexer_storage "github.com/EbumbaE/bandit/services/bandit-indexer/internal/storage"
 	"github.com/EbumbaE/bandit/services/bandit-indexer/server"
 )
+
+type producers struct {
+	banditIndexer kafka.SyncProducer
+}
+
+type notifiers struct {
+	banditIndexer *notifier.Notifier
+}
 
 type clients struct {
 	adminWrapper *rule_admin_wrapper.AdminWrapper
@@ -26,23 +36,22 @@ type connections struct {
 }
 
 type repositories struct {
-	banditIndexer *rule_admin_storage.Storage
+	banditIndexer *indexer_storage.Storage
 }
 
 type consumers struct {
 	ruleAdminEvent kafka.KafkaConsumer
 }
 
-type producers struct {
-	banditIndexerEvent kafka.SyncProducer
-}
-
 type application struct {
+	producers    producers
+	notifiers    notifiers
 	clients      clients
 	connections  connections
 	repositories repositories
 	provider     *provider.Provider
 	service      *rule_admin_service.Implementation
+	consumers    consumers
 
 	cfg Config
 	wg  *sync.WaitGroup
@@ -54,12 +63,24 @@ func newApp(ctx context.Context, cfg *Config) *application {
 		wg:  &sync.WaitGroup{},
 	}
 
+	a.initProducers(ctx)
 	a.initConnections(ctx)
 	a.initRepos(ctx)
 	a.initProvider()
 	a.initService()
+	a.initConsumer(ctx)
 
 	return &a
+}
+
+func (a *application) initProducers(ctx context.Context) {
+	producer, err := kafka.NewSyncProducer(ctx, a.cfg.Kafka.IndexerTopic, a.cfg.Kafka.Brokers)
+	if err != nil {
+		logger.Fatal("init rule-admin producer", zap.Error(err))
+	}
+
+	a.producers.banditIndexer = producer
+	a.notifiers.banditIndexer = notifier.NewNotifier(producer)
 }
 
 func (a *application) initConnections(ctx context.Context) {
@@ -71,9 +92,9 @@ func (a *application) initConnections(ctx context.Context) {
 }
 
 func (a *application) initRepos(ctx context.Context) {
-	banditIndexer, err := rule_admin_storage.New(ctx, a.connections.db)
+	banditIndexer, err := indexer_storage.New(ctx, a.connections.db)
 	if err != nil {
-		logger.Fatal("init rule admin repo", zap.Error(err))
+		logger.Fatal("init bandit-indexer storage", zap.Error(err))
 	}
 
 	a.repositories = repositories{
@@ -82,16 +103,38 @@ func (a *application) initRepos(ctx context.Context) {
 }
 
 func (a *application) initProvider() {
-	a.provider = provider.NewProvider()
+	a.provider = provider.NewProvider(a.repositories.banditIndexer)
 }
 
 func (a *application) initService() {
 	a.service = rule_admin_service.NewService(a.provider)
 }
 
+func (a *application) initConsumer(ctx context.Context) {
+	admin := indexer_consumer.NewAdminConsumer(a.clients.adminWrapper, a.repositories.banditIndexer, a.notifiers.banditIndexer)
+	consumer, err := kafka.NewKafkaConsumer(ctx, a.cfg.Kafka.Brokers, a.cfg.Kafka.AdminTopic, admin.Handle)
+	if err != nil {
+		logger.Fatal("init bandit-indexer admin consumer", zap.Error(err))
+	}
+
+	go consumer.Consume(ctx)
+
+	a.consumers.ruleAdminEvent = consumer
+
+	analytic := indexer_consumer.NewAnalyticConsumer(a.provider, a.notifiers.banditIndexer)
+	consumer, err = kafka.NewKafkaConsumer(ctx, a.cfg.Kafka.Brokers, a.cfg.Kafka.AnalyticTopic, analytic.Handle)
+	if err != nil {
+		logger.Fatal("init bandit-indexer analytic consumer", zap.Error(err))
+	}
+
+	go consumer.Consume(ctx)
+
+	a.consumers.ruleAdminEvent = consumer
+}
+
 func (a *application) Run(ctx context.Context) error {
-	server.StartRuleDiller(ctx, a.service, a.wg, a.cfg.Service.GrpcAddress)
-	server.InitRuleDillerSwagger(ctx, a.wg, a.cfg.Service.SwaggerAddress, a.cfg.Service.SwaggerHost, a.cfg.Service.GrpcAddress)
+	server.StarBanditIndexer(ctx, a.service, a.wg, a.cfg.Service.GrpcAddress)
+	server.InitBanditIndexerSwagger(ctx, a.wg, a.cfg.Service.SwaggerAddress, a.cfg.Service.SwaggerHost, a.cfg.Service.GrpcAddress)
 
 	return nil
 }

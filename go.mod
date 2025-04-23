@@ -5,7 +5,6 @@ go 1.23.3
 require (
 	github.com/IBM/sarama v1.43.3
 	github.com/georgysavva/scany/v2 v2.1.4
-	github.com/google/uuid v1.6.0
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.22.0
 	github.com/jackc/pgx/v5 v5.7.3
 	github.com/opentracing/opentracing-go v1.2.0

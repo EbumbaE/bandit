@@ -12,7 +12,7 @@ import (
 )
 
 type IndexerProvider interface {
-	GetRuleScores(ctx context.Context, ruleID string) (model.Bandit, error)
+	GetBandit(ctx context.Context, ruleID string) (model.Bandit, error)
 }
 
 type Implementation struct {
@@ -35,27 +35,24 @@ func (i *Implementation) GetRuleScores(ctx context.Context, req *desc.GetRuleSco
 		return nil, status.Error(codes.InvalidArgument, "empty rule id")
 	}
 
-	rule, err := i.indexerProvider.GetRuleScores(ctx, req.GetId())
+	rule, err := i.indexerProvider.GetBandit(ctx, req.GetId())
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	return &desc.GetRuleScoresResponse{
-		Service:  rule.Service,
-		Context:  rule.Context,
 		Version:  rule.Version,
-		Variants: decodeVariants(rule.Variants),
+		Variants: decodeArms(rule.Arms),
 	}, nil
 }
 
-func decodeVariants(in []model.Variant) []*desc.Variant {
+func decodeArms(in []model.Arm) []*desc.Variant {
 	res := make([]*desc.Variant, len(in))
 
 	for _, v := range in {
 		res = append(res, &desc.Variant{
-			Id:    v.Id,
+			Id:    v.VariantId,
 			Score: v.Score,
-			Data:  v.Data,
 			Count: v.Count,
 		})
 	}
