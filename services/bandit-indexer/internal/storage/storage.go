@@ -4,10 +4,13 @@ import (
 	"context"
 
 	"github.com/EbumbaE/bandit/pkg/psql"
+	"github.com/jackc/pgx/v5"
 	"github.com/pkg/errors"
 
 	model "github.com/EbumbaE/bandit/services/bandit-indexer/internal"
 )
+
+var ErrNotFound = pgx.ErrNoRows
 
 type Storage struct {
 	conn psql.Database
@@ -63,12 +66,17 @@ func (s *Storage) GetBanditByRuleID(ctx context.Context, ruleID string) (model.B
 	query := `
 		SELECT rule_id, version, bandit_key, config, state
 		FROM bandit_info
-		WHERE rule_id = $1;
+		WHERE rule_id = $1 AND deleted_at is NULL AND state = 'enabled';
 		`
 
 	err := s.conn.GetSingle(ctx, &r, query, ruleID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return model.Bandit{}, ErrNotFound
+		}
+	}
 
-	return r, err
+	return r, nil
 }
 
 func (s *Storage) CreateBandit(ctx context.Context, bandit model.Bandit) (model.Bandit, error) {
@@ -113,18 +121,56 @@ func (s *Storage) SetBanditState(ctx context.Context, ruleID string, state model
 	return err
 }
 
+func (s *Storage) DeleteBandit(ctx context.Context, ruleID string) error {
+	query := `
+		UPDATE bandit_info 
+		SET 
+			deleted_at = NOW() at time zone 'utc',
+			updated_at = NOW() at time zone 'utc' 
+		WHERE rule_id = $1;
+`
+
+	_, err := s.conn.Exec(ctx, query, ruleID)
+
+	return err
+}
+
 func (s *Storage) GetArms(ctx context.Context, ruleID string) ([]model.Arm, error) {
 	var v []model.Arm
 
 	query := `
 		SELECT variant_id, count, config, state
 		FROM arm_info
-		WHERE rule_id = $1;
+		WHERE rule_id = $1 AND deleted_at is NULL AND state = 'enabled';
 `
 
 	err := s.conn.GetSlice(ctx, &v, query, ruleID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrNotFound
+		}
+	}
 
-	return v, err
+	return v, nil
+}
+
+func (s *Storage) GetArm(ctx context.Context, variantID string) (model.Arm, error) {
+	var v model.Arm
+
+	query := `
+		SELECT variant_id, count, config, state
+		FROM arm_info
+		WHERE variant_id = $1 AND deleted_at is NULL AND state = 'enabled';
+`
+
+	err := s.conn.GetSingle(ctx, &v, query, variantID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return model.Arm{}, ErrNotFound
+		}
+	}
+
+	return v, nil
 }
 
 func (s *Storage) AddArm(ctx context.Context, ruleID string, v model.Arm) (model.Arm, error) {
@@ -155,6 +201,20 @@ func (s *Storage) AddArm(ctx context.Context, ruleID string, v model.Arm) (model
 	return v, nil
 }
 
+func (s *Storage) SetArmConfig(ctx context.Context, variantID string, config []byte) error {
+	query := `
+		UPDATE arm_info 
+		SET 
+			config = $2
+			updated_at = NOW() at time zone 'utc' 
+		WHERE variant_id = $1;
+`
+
+	_, err := s.conn.Exec(ctx, query, variantID, config)
+
+	return err
+}
+
 func (s *Storage) SetArmState(ctx context.Context, variantID string, state model.StateType) error {
 	query := `
 		UPDATE arm_info 
@@ -165,6 +225,20 @@ func (s *Storage) SetArmState(ctx context.Context, variantID string, state model
 `
 
 	_, err := s.conn.Exec(ctx, query, variantID, state)
+
+	return err
+}
+
+func (s *Storage) DeleteArm(ctx context.Context, variantID string) error {
+	query := `
+		UPDATE arm_info 
+		SET 
+			deleted_at = NOW() at time zone 'utc',
+			updated_at = NOW() at time zone 'utc' 
+		WHERE variant_id = $1;
+`
+
+	_, err := s.conn.Exec(ctx, query, variantID)
 
 	return err
 }

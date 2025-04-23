@@ -229,12 +229,41 @@ func (s *armSerializer) Deserialize(data []byte) (*ArmParams, error) {
 		return nil, errors.New("unmarshal params")
 	}
 
-	if params.Count < 0 {
-		return nil, errors.New("invalid N value in deserialized data")
-	}
-	if params.SigmaSq < 0 {
-		return nil, errors.New("invalid SigmaSq value in deserialized data")
+	return &params, nil
+}
+
+type banditSerializer struct{}
+
+type BanditSerializer interface {
+	Serialize(bandit *GaussianBandit) ([]byte, error)
+	Deserialize(data []byte) (*GaussianBandit, error)
+}
+
+func NewBanditSerializer() BanditSerializer {
+	return &banditSerializer{}
+}
+
+func (s *banditSerializer) Serialize(bandit *GaussianBandit) ([]byte, error) {
+	if bandit == nil {
+		return nil, errors.New("nil GaussianBandit provided")
 	}
 
-	return &params, nil
+	data, err := json.Marshal(bandit)
+	if err != nil {
+		return nil, errors.New("marshal params")
+	}
+	return data, nil
+}
+
+func (s *banditSerializer) Deserialize(data []byte) (*GaussianBandit, error) {
+	if len(data) == 0 {
+		return nil, errors.New("empty data provided")
+	}
+
+	var bandit GaussianBandit
+	if err := json.Unmarshal(data, &bandit); err != nil {
+		return nil, errors.New("unmarshal params")
+	}
+
+	return &bandit, nil
 }

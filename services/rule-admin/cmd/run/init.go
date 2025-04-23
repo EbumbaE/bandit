@@ -21,6 +21,14 @@ import (
 	"github.com/EbumbaE/bandit/services/rule-admin/server"
 )
 
+type producers struct {
+	ruleAdmin kafka.SyncProducer
+}
+
+type notifiers struct {
+	ruleAdmin *notifier.Notifier
+}
+
 type connections struct {
 	db psql.Database
 }
@@ -31,14 +39,6 @@ type repositories struct {
 
 type clients struct {
 	ruleDiller *rule_diller_wrapper.RuleDillerWrapper
-}
-
-type producers struct {
-	ruleAdminEvent kafka.SyncProducer
-}
-
-type notifiers struct {
-	ruleAdminEvent *notifier.Notifier
 }
 
 type application struct {
@@ -76,8 +76,8 @@ func (a *application) initProducers(ctx context.Context) {
 		logger.Fatal("init rule-admin producer", zap.Error(err))
 	}
 
-	a.producers.ruleAdminEvent = producer
-	a.notifiers.ruleAdminEvent = notifier.NewNotifier(producer)
+	a.producers.ruleAdmin = producer
+	a.notifiers.ruleAdmin = notifier.NewNotifier(producer)
 }
 
 func (a *application) initClients(ctx context.Context) {
@@ -109,7 +109,7 @@ func (a *application) initRepos(ctx context.Context) {
 }
 
 func (a *application) initProvider() {
-	a.provider = provider.NewProvider(a.repositories.ruleAdmin, a.notifiers.ruleAdminEvent)
+	a.provider = provider.NewProvider(a.repositories.ruleAdmin, a.notifiers.ruleAdmin)
 }
 
 func (a *application) initService() {
@@ -125,5 +125,5 @@ func (a *application) Run(ctx context.Context) error {
 
 func (a *application) Close() {
 	a.connections.db.Close()
-	a.producers.ruleAdminEvent.Close()
+	a.producers.ruleAdmin.Close()
 }

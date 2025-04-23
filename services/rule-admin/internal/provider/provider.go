@@ -33,7 +33,7 @@ type Storage interface {
 
 type Notifier interface {
 	SendRule(ctx context.Context, ruleID string, action notifier.ActionType) error
-	SendVariant(ctx context.Context, ruleID string, action notifier.ActionType) error
+	SendVariant(ctx context.Context, ruleID, variantID string, action notifier.ActionType) error
 }
 
 type Provider struct {
@@ -160,28 +160,28 @@ func (p *Provider) AddVariant(ctx context.Context, ruleID string, v model.Varian
 		return model.Variant{}, err
 	}
 
-	if err := p.notifier.SendRule(ctx, v.Id, notifier.ActionCreate); err != nil {
+	if err := p.notifier.SendVariant(ctx, ruleID, v.Id, notifier.ActionCreate); err != nil {
 		logger.Error("failed send create variant event", zap.Error(err))
 	}
 
 	return v, nil
 }
 
-func (p *Provider) SetVariantState(ctx context.Context, id string, state model.StateType) error {
+func (p *Provider) SetVariantState(ctx context.Context, ruleID, variantID string, state model.StateType) error {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "provider/SetVariantState")
 	defer span.Finish()
 
-	if err := p.storage.SetVariantState(ctx, id, state); err != nil {
+	if err := p.storage.SetVariantState(ctx, variantID, state); err != nil {
 		return err
 	}
 
 	switch state {
 	case model.StateTypeDisable:
-		if err := p.notifier.SendRule(ctx, id, notifier.ActionCreate); err != nil {
+		if err := p.notifier.SendVariant(ctx, ruleID, variantID, notifier.ActionCreate); err != nil {
 			logger.Error("failed send inactive variant event", zap.Error(err))
 		}
 	case model.StateTypeEnable:
-		if err := p.notifier.SendRule(ctx, id, notifier.ActionCreate); err != nil {
+		if err := p.notifier.SendVariant(ctx, ruleID, variantID, notifier.ActionCreate); err != nil {
 			logger.Error("failed send active variant event", zap.Error(err))
 		}
 	}

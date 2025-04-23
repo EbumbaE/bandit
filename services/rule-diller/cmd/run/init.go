@@ -108,6 +108,7 @@ func (a *application) initConsumer(ctx context.Context) {
 
 	consumer, err := kafka.NewKafkaConsumer(ctx, a.cfg.Kafka.Brokers, a.cfg.Kafka.Topic, handler.Handle)
 	if err != nil {
+		logger.Fatal("init rule-diller indexer consumer", zap.Error(err))
 	}
 
 	go consumer.Consume(ctx)

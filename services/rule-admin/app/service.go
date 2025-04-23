@@ -24,7 +24,7 @@ type AdminProvider interface {
 
 	GetVariant(ctx context.Context, ruleID, variandID string) (model.Variant, error)
 	AddVariant(ctx context.Context, ruleID string, v model.Variant) (model.Variant, error)
-	SetVariantState(ctx context.Context, id string, state model.StateType) error
+	SetVariantState(ctx context.Context, ruleID, variandID string, state model.StateType) error
 
 	CreateWantedBandit(ctx context.Context, wb model.WantedBandit) error
 	GetWantedRegistry(ctx context.Context) ([]model.WantedBandit, error)
@@ -164,11 +164,11 @@ func (i *Implementation) SetVariantState(ctx context.Context, req *desc.SetVaria
 	span, ctx := opentracing.StartSpanFromContext(ctx, "api/SetVariantState")
 	defer span.Finish()
 
-	if len(req.GetId()) == 0 {
+	if len(req.GetId()) == 0 || len(req.GetRuleId()) == 0 {
 		return nil, status.Error(codes.InvalidArgument, "empty id")
 	}
 
-	if err := i.ruleProvider.SetVariantState(ctx, req.GetId(), encodeStateType(req.GetState())); err != nil {
+	if err := i.ruleProvider.SetVariantState(ctx, req.GetId(), req.GetRuleId(), encodeStateType(req.GetState())); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 

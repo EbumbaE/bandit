@@ -14,5 +14,7 @@ postgres:
 
 kafka:
   brokers: broker1, broker2
-  topic: rule_admin_event
+  admin_topic: rule_admin_event
+  analytic_topic: internal_rule_analytic
+  indexer_topic: bandit_indexer_event
 

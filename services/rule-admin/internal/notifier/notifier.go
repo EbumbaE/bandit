@@ -33,25 +33,27 @@ func NewNotifier(producer Producer) *Notifier {
 }
 
 type Event struct {
-	Type   string `json:"type"`
-	Action string `json:"action"`
-	Id     string `json:"id"`
+	Type      string `json:"type"`
+	Action    string `json:"action"`
+	RuleID    string `json:"rule_id"`
+	VariantID string `json:"variant_id"`
 }
 
 func (n *Notifier) SendRule(ctx context.Context, ruleID string, action ActionType) error {
-	return n.send(ctx, ruleID, "rule", action)
+	return n.send(ctx, ruleID, "", "rule", action)
 }
 
-func (n *Notifier) SendVariant(ctx context.Context, ruleID string, action ActionType) error {
-	return n.send(ctx, ruleID, "variant", action)
+func (n *Notifier) SendVariant(ctx context.Context, ruleID, variantID string, action ActionType) error {
+	return n.send(ctx, ruleID, variantID, "variant", action)
 }
 
-func (n *Notifier) send(ctx context.Context, ruleID string, eventType string, action ActionType) error {
+func (n *Notifier) send(ctx context.Context, ruleID, variantID string, eventType string, action ActionType) error {
 	msg, err := json.Marshal(
 		Event{
-			Type:   eventType,
-			Action: action.String(),
-			Id:     ruleID,
+			Type:      eventType,
+			Action:    action.String(),
+			RuleID:    ruleID,
+			VariantID: variantID,
 		},
 	)
 	if err != nil {
