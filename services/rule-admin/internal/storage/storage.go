@@ -64,7 +64,7 @@ func initSchema(ctx context.Context, db psql.Database) error {
 			deleted_at TIMESTAMP
 		);
 		
-		CREATE UNIQUE INDEX IF NOT EXISTS variant_info_rule_id ON variant_info(rule_id);
+		CREATE INDEX IF NOT EXISTS variant_info_rule_id ON variant_info(rule_id);
 `
 
 	_, err := db.Exec(ctx, query)

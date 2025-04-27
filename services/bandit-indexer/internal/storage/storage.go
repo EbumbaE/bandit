@@ -121,6 +121,20 @@ func (s *Storage) SetBanditState(ctx context.Context, ruleID string, state model
 	return err
 }
 
+func (s *Storage) UpBanditVersion(ctx context.Context, ruleID string) error {
+	query := `
+		UPDATE bandit_info 
+		SET 
+			config = config + 1
+			updated_at = NOW() at time zone 'utc' 
+		WHERE rule_id = $1;
+`
+
+	_, err := s.conn.Exec(ctx, query, ruleID)
+
+	return err
+}
+
 func (s *Storage) DeleteBandit(ctx context.Context, ruleID string) error {
 	query := `
 		UPDATE bandit_info 

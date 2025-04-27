@@ -48,20 +48,25 @@ service RuleAdminService {
       get: "/v1/admin/variant/{id}"
     };
   };
-  rpc GetVariantData(GetVariantRequest) returns (VariantResponse) {
-    option (google.api.http) = {
-      get: "/v1/admin/variant/{id}/data"
-    };
-  };
   rpc CheckVariant(CheckRequest) returns (CheckResponse) {
     option (google.api.http) = {
       get: "/v1/admin/variant/{id}/check"
+    };
+  };
+  rpc GetVariantData(GetVariantRequest) returns (VariantResponse) {
+    option (google.api.http) = {
+      get: "/v1/admin/variant/{id}/data"
     };
   };
   rpc AddVariant(AddVariantRequest) returns (VariantResponse) {
     option (google.api.http) = {
       post: "/v1/admin/variant"
       body: "*"
+    };
+  };
+  rpc RemoveVariant(GetVariantRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/v1/admin/variant/{id}"
     };
   };
   rpc SetVariantState(SetVariantStateRequest) returns (google.protobuf.Empty) {

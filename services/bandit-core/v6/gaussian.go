@@ -11,13 +11,16 @@ import (
 	"gonum.org/v1/gonum/stat/distuv"
 )
 
-const DefaultExplorationFactor = 0.1
+const (
+	GaussianBanditKey        = "gaussian"
+	DefaultExplorationFactor = 0.1
+)
 
 func init() {
 	rand.Seed(uint64(time.Now().UnixNano()))
 }
 
-type ArmParams struct {
+type GaussianArm struct {
 	Count     uint64  `json:"count"`
 	Mu        float64 `json:"mu"`
 	SigmaSq   float64 `json:"sigma_sq"`
@@ -47,8 +50,8 @@ func NewDefaultGaussianBandit() *GaussianBandit {
 	}
 }
 
-func DefaultArmParams() *ArmParams {
-	return &ArmParams{
+func NewDefaultGaussianArm() *GaussianArm {
+	return &GaussianArm{
 		Mu:        0.0,
 		SigmaSq:   1.0,
 		Count:     0,
@@ -58,7 +61,7 @@ func DefaultArmParams() *ArmParams {
 	}
 }
 
-func (gb *GaussianBandit) Calculate(params *ArmParams, reward float64) *ArmParams {
+func (gb *GaussianBandit) Calculate(params *GaussianArm, reward float64) *GaussianArm {
 	newParams := *params
 
 	if gb.Version < params.Version {
@@ -94,7 +97,7 @@ func (gb *GaussianBandit) Calculate(params *ArmParams, reward float64) *ArmParam
 	return &newParams
 }
 
-func (gb *GaussianBandit) Select(arms map[string]*ArmParams) string {
+func (gb *GaussianBandit) Select(arms map[string]*GaussianArm) string {
 	maxSample := -math.MaxFloat64
 	selected := ""
 
@@ -122,6 +125,40 @@ func (gb *GaussianBandit) Select(arms map[string]*ArmParams) string {
 type Probability struct {
 	Score float64
 	Count uint64
+}
+
+func (gb *GaussianBandit) CalculateProbabilities(arms map[string]*GaussianArm) map[string]Probability {
+	probs := make(map[string]Probability, len(arms))
+
+	samples := make(map[string]float64)
+	maxSample := -math.MaxFloat64
+
+	for armID, params := range arms {
+		var sample float64
+		if params.Count == 0 {
+			sample = distuv.Normal{Mu: 0, Sigma: gb.MinSigma}.Rand()
+		} else {
+			sigma := math.Sqrt(params.SigmaSq / float64(params.Count))
+			sample = distuv.Normal{Mu: params.Mu, Sigma: sigma}.Rand()
+		}
+
+		samples[armID] = sample
+		maxSample = max(maxSample, sample)
+	}
+
+	totalExpSample := float64(0.0)
+	for armID, sample := range samples {
+		expSample := math.Exp(sample - maxSample)
+		probs[armID] = Probability{Score: expSample, Count: uint64(arms[armID].Count)}
+		totalExpSample += expSample
+	}
+
+	for armID, prob := range probs {
+		prob.Score /= totalExpSample
+		probs[armID] = prob
+	}
+
+	return probs
 }
 
 func SelectByProbabilities(options map[string]Probability, explorationFactor float64) string {
@@ -162,108 +199,50 @@ func SelectByProbabilities(options map[string]Probability, explorationFactor flo
 	return lastKey
 }
 
-func (gb *GaussianBandit) CalculateProbabilities(arms map[string]*ArmParams) map[string]Probability {
-	probs := make(map[string]Probability, len(arms))
-
-	samples := make(map[string]float64)
-	maxSample := -math.MaxFloat64
-
-	for armID, params := range arms {
-		var sample float64
-		if params.Count == 0 {
-			sample = distuv.Normal{Mu: 0, Sigma: gb.MinSigma}.Rand()
-		} else {
-			sigma := math.Sqrt(params.SigmaSq / float64(params.Count))
-			sample = distuv.Normal{Mu: params.Mu, Sigma: sigma}.Rand()
-		}
-
-		samples[armID] = sample
-		maxSample = max(maxSample, sample)
+func (ga *GaussianArm) Serialize() ([]byte, error) {
+	if ga == nil {
+		return nil, errors.New("nil GaussianArm provided")
 	}
 
-	totalExpSample := float64(0.0)
-	for armID, sample := range samples {
-		expSample := math.Exp(sample - maxSample)
-		probs[armID] = Probability{Score: expSample, Count: uint64(arms[armID].Count)}
-		totalExpSample += expSample
-	}
-
-	for armID, prob := range probs {
-		prob.Score /= totalExpSample
-		probs[armID] = prob
-	}
-
-	return probs
-}
-
-type ArmSerializer interface {
-	Serialize(params *ArmParams) ([]byte, error)
-	Deserialize(data []byte) (*ArmParams, error)
-}
-
-func NewArmSerializer() ArmSerializer {
-	return &armSerializer{}
-}
-
-type armSerializer struct{}
-
-func (s *armSerializer) Serialize(params *ArmParams) ([]byte, error) {
-	if params == nil {
-		return nil, errors.New("nil ArmParams provided")
-	}
-
-	data, err := json.Marshal(params)
+	data, err := json.Marshal(ga)
 	if err != nil {
 		return nil, errors.New("marshal params")
 	}
 	return data, nil
 }
 
-func (s *armSerializer) Deserialize(data []byte) (*ArmParams, error) {
+func (ga *GaussianArm) Deserialize(data []byte) error {
 	if len(data) == 0 {
-		return nil, errors.New("empty data provided")
+		return errors.New("empty data provided")
 	}
 
-	var params ArmParams
-	if err := json.Unmarshal(data, &params); err != nil {
-		return nil, errors.New("unmarshal params")
+	if err := json.Unmarshal(data, ga); err != nil {
+		return errors.New("unmarshal params")
 	}
 
-	return &params, nil
+	return nil
 }
 
-type banditSerializer struct{}
-
-type BanditSerializer interface {
-	Serialize(bandit *GaussianBandit) ([]byte, error)
-	Deserialize(data []byte) (*GaussianBandit, error)
-}
-
-func NewBanditSerializer() BanditSerializer {
-	return &banditSerializer{}
-}
-
-func (s *banditSerializer) Serialize(bandit *GaussianBandit) ([]byte, error) {
-	if bandit == nil {
+func (gb *GaussianBandit) Serialize() ([]byte, error) {
+	if gb == nil {
 		return nil, errors.New("nil GaussianBandit provided")
 	}
 
-	data, err := json.Marshal(bandit)
+	data, err := json.Marshal(gb)
 	if err != nil {
 		return nil, errors.New("marshal params")
 	}
 	return data, nil
 }
 
-func (s *banditSerializer) Deserialize(data []byte) (*GaussianBandit, error) {
+func (gb *GaussianBandit) Deserialize(data []byte) error {
 	if len(data) == 0 {
-		return nil, errors.New("empty data provided")
+		return errors.New("empty data provided")
 	}
 
-	var bandit GaussianBandit
-	if err := json.Unmarshal(data, &bandit); err != nil {
-		return nil, errors.New("unmarshal params")
+	if err := json.Unmarshal(data, gb); err != nil {
+		return errors.New("unmarshal params")
 	}
 
-	return &bandit, nil
+	return nil
 }
