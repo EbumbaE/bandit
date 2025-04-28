@@ -34,7 +34,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/ruleadminModifyRuleRequest"
+              "$ref": "#/definitions/ruleadminCreateRuleRequest"
             }
           }
         ],
@@ -317,6 +317,40 @@
         "tags": [
           "RuleAdminService"
         ]
+      },
+      "delete": {
+        "operationId": "RuleAdminService_RemoveVariant",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "rule_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "RuleAdminService"
+        ]
       }
     },
     "/v1/admin/variant/{id}/check": {
@@ -476,6 +510,29 @@
         }
       }
     },
+    "ruleadminCreateRuleRequest": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "service": {
+          "type": "string"
+        },
+        "context": {
+          "type": "string"
+        },
+        "variants": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ruleadminVariant"
+          }
+        }
+      }
+    },
     "ruleadminCreateWantedBanditRequest": {
       "type": "object",
       "properties": {
@@ -536,6 +593,12 @@
           "$ref": "#/definitions/ruleadminState"
         },
         "bandit_key": {
+          "type": "string"
+        },
+        "service": {
+          "type": "string"
+        },
+        "context": {
           "type": "string"
         },
         "variants": {

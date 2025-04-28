@@ -1,0 +1,13 @@
+test:
+  mode: work
+  parallel_count: 100
+  cycle_count: 10000
+
+service:
+  rule_diller_adress: rule-diller:8443
+  rule_admin_address: rule-admin:8443
+  connection_timeout: 10s
+
+kafka:
+  brokers: broker1, broker2
+  topic: external_rule_analytic

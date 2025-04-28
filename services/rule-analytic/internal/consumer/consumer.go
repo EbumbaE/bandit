@@ -40,13 +40,13 @@ func (c *Consumer) Handle(ctx context.Context, msg []byte) error {
 	reward := toHistory.Amount
 
 	switch toHistory.Action {
-	case "click":
+	case model.ClickActionType:
 		reward *= 0.3
-	case "view":
+	case model.ViewActionType:
 		reward *= 0.1
-	case "add_to_cart":
+	case model.CartActionType:
 		reward *= 0.003 // 100 у.e == 1 клик
-	case "purchase":
+	case model.PurchaseActionType:
 		reward *= 0.3 // 1 у.e == 1 клик
 	default:
 		reward *= 0

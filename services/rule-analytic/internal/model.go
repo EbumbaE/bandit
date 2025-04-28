@@ -10,7 +10,7 @@ type PayloadAnalitic struct {
 
 type HistoryEvent struct {
 	Payload PayloadAnalitic `json:"payload"`
-	Action  string          `json:"action"`
+	Action  ActionType      `json:"action"`
 	Amount  float64         `json:"amount"`
 }
 
@@ -20,3 +20,12 @@ type BanditEvent struct {
 	Reward      float64 `json:"reward"`
 	RuleVersion uint64  `json:"rule_version"`
 }
+
+type ActionType string
+
+var (
+	ClickActionType    = ActionType("click")
+	ViewActionType     = ActionType("view")
+	CartActionType     = ActionType("add_to_cart")
+	PurchaseActionType = ActionType("purchase")
+)
