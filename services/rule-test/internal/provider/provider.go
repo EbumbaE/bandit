@@ -7,6 +7,7 @@ import (
 
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
+	"golang.org/x/exp/rand"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/EbumbaE/bandit/pkg/logger"
@@ -20,6 +21,10 @@ const (
 
 	loadRuleContextFormat = "load_test_%d"
 )
+
+func init() {
+	rand.Seed(uint64(time.Now().Unix()))
+}
 
 type DillerClient interface {
 	GetRuleData(ctx context.Context, service, context string) ([]byte, []byte, error)
@@ -61,7 +66,7 @@ func (p *Provider) DoLoadTest(ctx context.Context, parallelCount, cycleAmount in
 
 	for range parallelCount {
 		errGr.Go(func() error {
-			localCtx := fmt.Sprintf(loadRuleContextFormat, 1)
+			localCtx := fmt.Sprintf(loadRuleContextFormat, rand.Intn(1_000_000_000))
 
 			_, err := p.admin.CreateRule(gCtx, service, localCtx)
 			if err != nil {
