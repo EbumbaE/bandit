@@ -54,10 +54,11 @@ func (p *Provider) GetRuleData(ctx context.Context, service, ctxKey string) ([]b
 	}
 
 	payload, err := json.Marshal(model.PayloadAnalitic{
-		Service:       service,
-		Context:       ctxKey,
-		VariantID:     selectedKey,
-		BanditVersion: version,
+		Service:     service,
+		Context:     ctxKey,
+		VariantID:   selectedKey,
+		RuleID:      "", // TODO
+		RuleVersion: version,
 	})
 	if err != nil {
 		logger.Error("json marshal payload", zap.String("variant_key", selectedKey), zap.Error(err))

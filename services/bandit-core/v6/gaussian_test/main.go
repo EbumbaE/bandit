@@ -28,12 +28,11 @@ func main() {
 	gb := bandit.NewDefaultGaussianBandit()
 
 	memoryStorage := &MemoryStorage{
-		data:          make(map[string]map[string][]byte),
-		armSerializer: bandit.NewArmSerializer(),
+		data: make(map[string]map[string][]byte),
 	}
 
 	armNames := []string{"arm1", "arm2", "arm3"}
-	initialParams := bandit.DefaultArmParams()
+	initialParams := bandit.NewDefaultGaussianArm()
 	initialParams.Version = 1
 
 	for _, armName := range armNames[:2] {
@@ -113,12 +112,11 @@ func main() {
 }
 
 type MemoryStorage struct {
-	data          map[string]map[string][]byte
-	armSerializer bandit.ArmSerializer
-	mu            sync.RWMutex
+	data map[string]map[string][]byte
+	mu   sync.RWMutex
 }
 
-func (m *MemoryStorage) Save(ruleID, armID string, params *bandit.ArmParams) {
+func (m *MemoryStorage) Save(ruleID, armID string, params *bandit.GaussianArm) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -127,22 +125,22 @@ func (m *MemoryStorage) Save(ruleID, armID string, params *bandit.ArmParams) {
 	}
 
 	var err error
-	m.data[ruleID][armID], err = m.armSerializer.Serialize(params)
+	m.data[ruleID][armID], err = params.Serialize()
 	if err != nil {
 		panic(err)
 	}
 }
 
-func (m *MemoryStorage) GetAll(ruleID string) map[string]*bandit.ArmParams {
+func (m *MemoryStorage) GetAll(ruleID string) map[string]*bandit.GaussianArm {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
 	var err error
-	arms := make(map[string]*bandit.ArmParams)
+	arms := make(map[string]*bandit.GaussianArm)
 	if ruleArms, exists := m.data[ruleID]; exists {
 		for id, params := range ruleArms {
-			arms[id], err = m.armSerializer.Deserialize(params)
-			if err != nil {
+			arms[id] = bandit.NewDefaultGaussianArm()
+			if err = arms[id].Deserialize(params); err != nil {
 				panic(err)
 			}
 		}

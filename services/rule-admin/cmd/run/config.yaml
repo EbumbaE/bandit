@@ -4,7 +4,6 @@ service:
   swagger_host: rule.admin.swagger.bandit.ebumba.ru
   rule_diller_adress: rule-diller:8443
   connection_timeout: 10s
-  only_cache_mode: false
 
 postgres:
   host: 0.0.0.1

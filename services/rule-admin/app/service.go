@@ -2,7 +2,6 @@ package app
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 
 	"github.com/opentracing/opentracing-go"
@@ -61,11 +60,11 @@ func (i *Implementation) GetRule(ctx context.Context, req *desc.GetRuleRequest) 
 	return decodeRuleResponse(r), nil
 }
 
-func (i *Implementation) CreateRule(ctx context.Context, req *desc.ModifyRuleRequest) (*desc.RuleResponse, error) {
+func (i *Implementation) CreateRule(ctx context.Context, req *desc.CreateRuleRequest) (*desc.RuleResponse, error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "api/CreateRule")
 	defer span.Finish()
 
-	r, err := i.ruleProvider.CreateRule(ctx, encodeModifyRule(req))
+	r, err := i.ruleProvider.CreateRule(ctx, encodeCreateRule(req))
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -285,6 +284,14 @@ func encodeModifyRule(v *desc.ModifyRuleRequest) model.Rule {
 	}
 }
 
+func encodeCreateRule(v *desc.CreateRuleRequest) model.Rule {
+	return model.Rule{
+		Name:        v.Name,
+		Description: v.Description,
+		Variants:    encodeVariants(v.GetVariants()),
+	}
+}
+
 func decodeRuleResponse(r model.Rule) *desc.RuleResponse {
 	return &desc.RuleResponse{
 		Rule: decodeRule(r),
@@ -340,15 +347,20 @@ func decodeVariant(v model.Variant) *desc.Variant {
 }
 
 func encodeVariant(v *desc.Variant) model.Variant {
-	d := v.GetData()
-	marshaled, _ := json.Marshal(d)
-
 	return model.Variant{
 		Id:    v.GetId(),
 		Name:  v.GetName(),
-		Data:  marshaled,
+		Data:  v.GetData(),
 		State: encodeStateType(v.State),
 	}
+}
+
+func encodeVariants(in []*desc.Variant) []model.Variant {
+	out := make([]model.Variant, len(in))
+	for i, v := range in {
+		out[i] = encodeVariant(v)
+	}
+	return out
 }
 
 func decodeVariantResponse(v model.Variant) *desc.VariantResponse {

@@ -27,9 +27,10 @@ const (
 	RuleAdminService_SetRuleState_FullMethodName          = "/bandit.services.ruleadmin.RuleAdminService/SetRuleState"
 	RuleAdminService_GetRuleServiceContext_FullMethodName = "/bandit.services.ruleadmin.RuleAdminService/GetRuleServiceContext"
 	RuleAdminService_GetVariant_FullMethodName            = "/bandit.services.ruleadmin.RuleAdminService/GetVariant"
-	RuleAdminService_GetVariantData_FullMethodName        = "/bandit.services.ruleadmin.RuleAdminService/GetVariantData"
 	RuleAdminService_CheckVariant_FullMethodName          = "/bandit.services.ruleadmin.RuleAdminService/CheckVariant"
+	RuleAdminService_GetVariantData_FullMethodName        = "/bandit.services.ruleadmin.RuleAdminService/GetVariantData"
 	RuleAdminService_AddVariant_FullMethodName            = "/bandit.services.ruleadmin.RuleAdminService/AddVariant"
+	RuleAdminService_RemoveVariant_FullMethodName         = "/bandit.services.ruleadmin.RuleAdminService/RemoveVariant"
 	RuleAdminService_SetVariantState_FullMethodName       = "/bandit.services.ruleadmin.RuleAdminService/SetVariantState"
 	RuleAdminService_CreateWantedBandit_FullMethodName    = "/bandit.services.ruleadmin.RuleAdminService/CreateWantedBandit"
 	RuleAdminService_GetWantedRegistry_FullMethodName     = "/bandit.services.ruleadmin.RuleAdminService/GetWantedRegistry"
@@ -41,14 +42,15 @@ const (
 type RuleAdminServiceClient interface {
 	GetRule(ctx context.Context, in *GetRuleRequest, opts ...grpc.CallOption) (*RuleResponse, error)
 	ChechRule(ctx context.Context, in *CheckRequest, opts ...grpc.CallOption) (*CheckResponse, error)
-	CreateRule(ctx context.Context, in *ModifyRuleRequest, opts ...grpc.CallOption) (*RuleResponse, error)
+	CreateRule(ctx context.Context, in *CreateRuleRequest, opts ...grpc.CallOption) (*RuleResponse, error)
 	UpdateRule(ctx context.Context, in *ModifyRuleRequest, opts ...grpc.CallOption) (*RuleResponse, error)
 	SetRuleState(ctx context.Context, in *SetRuleStateRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	GetRuleServiceContext(ctx context.Context, in *GetRuleRequest, opts ...grpc.CallOption) (*GetRuleServiceContextResponse, error)
 	GetVariant(ctx context.Context, in *GetVariantRequest, opts ...grpc.CallOption) (*VariantResponse, error)
-	GetVariantData(ctx context.Context, in *GetVariantRequest, opts ...grpc.CallOption) (*VariantResponse, error)
 	CheckVariant(ctx context.Context, in *CheckRequest, opts ...grpc.CallOption) (*CheckResponse, error)
+	GetVariantData(ctx context.Context, in *GetVariantRequest, opts ...grpc.CallOption) (*VariantResponse, error)
 	AddVariant(ctx context.Context, in *AddVariantRequest, opts ...grpc.CallOption) (*VariantResponse, error)
+	RemoveVariant(ctx context.Context, in *GetVariantRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	SetVariantState(ctx context.Context, in *SetVariantStateRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	CreateWantedBandit(ctx context.Context, in *CreateWantedBanditRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	GetWantedRegistry(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetWantedRegistryResponse, error)
@@ -80,7 +82,7 @@ func (c *ruleAdminServiceClient) ChechRule(ctx context.Context, in *CheckRequest
 	return out, nil
 }
 
-func (c *ruleAdminServiceClient) CreateRule(ctx context.Context, in *ModifyRuleRequest, opts ...grpc.CallOption) (*RuleResponse, error) {
+func (c *ruleAdminServiceClient) CreateRule(ctx context.Context, in *CreateRuleRequest, opts ...grpc.CallOption) (*RuleResponse, error) {
 	out := new(RuleResponse)
 	err := c.cc.Invoke(ctx, RuleAdminService_CreateRule_FullMethodName, in, out, opts...)
 	if err != nil {
@@ -125,15 +127,6 @@ func (c *ruleAdminServiceClient) GetVariant(ctx context.Context, in *GetVariantR
 	return out, nil
 }
 
-func (c *ruleAdminServiceClient) GetVariantData(ctx context.Context, in *GetVariantRequest, opts ...grpc.CallOption) (*VariantResponse, error) {
-	out := new(VariantResponse)
-	err := c.cc.Invoke(ctx, RuleAdminService_GetVariantData_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *ruleAdminServiceClient) CheckVariant(ctx context.Context, in *CheckRequest, opts ...grpc.CallOption) (*CheckResponse, error) {
 	out := new(CheckResponse)
 	err := c.cc.Invoke(ctx, RuleAdminService_CheckVariant_FullMethodName, in, out, opts...)
@@ -143,9 +136,27 @@ func (c *ruleAdminServiceClient) CheckVariant(ctx context.Context, in *CheckRequ
 	return out, nil
 }
 
+func (c *ruleAdminServiceClient) GetVariantData(ctx context.Context, in *GetVariantRequest, opts ...grpc.CallOption) (*VariantResponse, error) {
+	out := new(VariantResponse)
+	err := c.cc.Invoke(ctx, RuleAdminService_GetVariantData_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *ruleAdminServiceClient) AddVariant(ctx context.Context, in *AddVariantRequest, opts ...grpc.CallOption) (*VariantResponse, error) {
 	out := new(VariantResponse)
 	err := c.cc.Invoke(ctx, RuleAdminService_AddVariant_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *ruleAdminServiceClient) RemoveVariant(ctx context.Context, in *GetVariantRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, RuleAdminService_RemoveVariant_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -185,14 +196,15 @@ func (c *ruleAdminServiceClient) GetWantedRegistry(ctx context.Context, in *empt
 type RuleAdminServiceServer interface {
 	GetRule(context.Context, *GetRuleRequest) (*RuleResponse, error)
 	ChechRule(context.Context, *CheckRequest) (*CheckResponse, error)
-	CreateRule(context.Context, *ModifyRuleRequest) (*RuleResponse, error)
+	CreateRule(context.Context, *CreateRuleRequest) (*RuleResponse, error)
 	UpdateRule(context.Context, *ModifyRuleRequest) (*RuleResponse, error)
 	SetRuleState(context.Context, *SetRuleStateRequest) (*emptypb.Empty, error)
 	GetRuleServiceContext(context.Context, *GetRuleRequest) (*GetRuleServiceContextResponse, error)
 	GetVariant(context.Context, *GetVariantRequest) (*VariantResponse, error)
-	GetVariantData(context.Context, *GetVariantRequest) (*VariantResponse, error)
 	CheckVariant(context.Context, *CheckRequest) (*CheckResponse, error)
+	GetVariantData(context.Context, *GetVariantRequest) (*VariantResponse, error)
 	AddVariant(context.Context, *AddVariantRequest) (*VariantResponse, error)
+	RemoveVariant(context.Context, *GetVariantRequest) (*emptypb.Empty, error)
 	SetVariantState(context.Context, *SetVariantStateRequest) (*emptypb.Empty, error)
 	CreateWantedBandit(context.Context, *CreateWantedBanditRequest) (*emptypb.Empty, error)
 	GetWantedRegistry(context.Context, *emptypb.Empty) (*GetWantedRegistryResponse, error)
@@ -209,7 +221,7 @@ func (UnimplementedRuleAdminServiceServer) GetRule(context.Context, *GetRuleRequ
 func (UnimplementedRuleAdminServiceServer) ChechRule(context.Context, *CheckRequest) (*CheckResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ChechRule not implemented")
 }
-func (UnimplementedRuleAdminServiceServer) CreateRule(context.Context, *ModifyRuleRequest) (*RuleResponse, error) {
+func (UnimplementedRuleAdminServiceServer) CreateRule(context.Context, *CreateRuleRequest) (*RuleResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateRule not implemented")
 }
 func (UnimplementedRuleAdminServiceServer) UpdateRule(context.Context, *ModifyRuleRequest) (*RuleResponse, error) {
@@ -224,14 +236,17 @@ func (UnimplementedRuleAdminServiceServer) GetRuleServiceContext(context.Context
 func (UnimplementedRuleAdminServiceServer) GetVariant(context.Context, *GetVariantRequest) (*VariantResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetVariant not implemented")
 }
-func (UnimplementedRuleAdminServiceServer) GetVariantData(context.Context, *GetVariantRequest) (*VariantResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetVariantData not implemented")
-}
 func (UnimplementedRuleAdminServiceServer) CheckVariant(context.Context, *CheckRequest) (*CheckResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CheckVariant not implemented")
 }
+func (UnimplementedRuleAdminServiceServer) GetVariantData(context.Context, *GetVariantRequest) (*VariantResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetVariantData not implemented")
+}
 func (UnimplementedRuleAdminServiceServer) AddVariant(context.Context, *AddVariantRequest) (*VariantResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AddVariant not implemented")
+}
+func (UnimplementedRuleAdminServiceServer) RemoveVariant(context.Context, *GetVariantRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RemoveVariant not implemented")
 }
 func (UnimplementedRuleAdminServiceServer) SetVariantState(context.Context, *SetVariantStateRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SetVariantState not implemented")
@@ -292,7 +307,7 @@ func _RuleAdminService_ChechRule_Handler(srv interface{}, ctx context.Context, d
 }
 
 func _RuleAdminService_CreateRule_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ModifyRuleRequest)
+	in := new(CreateRuleRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -304,7 +319,7 @@ func _RuleAdminService_CreateRule_Handler(srv interface{}, ctx context.Context, 
 		FullMethod: RuleAdminService_CreateRule_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RuleAdminServiceServer).CreateRule(ctx, req.(*ModifyRuleRequest))
+		return srv.(RuleAdminServiceServer).CreateRule(ctx, req.(*CreateRuleRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -381,24 +396,6 @@ func _RuleAdminService_GetVariant_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RuleAdminService_GetVariantData_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetVariantRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(RuleAdminServiceServer).GetVariantData(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: RuleAdminService_GetVariantData_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RuleAdminServiceServer).GetVariantData(ctx, req.(*GetVariantRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _RuleAdminService_CheckVariant_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(CheckRequest)
 	if err := dec(in); err != nil {
@@ -417,6 +414,24 @@ func _RuleAdminService_CheckVariant_Handler(srv interface{}, ctx context.Context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _RuleAdminService_GetVariantData_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetVariantRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RuleAdminServiceServer).GetVariantData(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: RuleAdminService_GetVariantData_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RuleAdminServiceServer).GetVariantData(ctx, req.(*GetVariantRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _RuleAdminService_AddVariant_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(AddVariantRequest)
 	if err := dec(in); err != nil {
@@ -431,6 +446,24 @@ func _RuleAdminService_AddVariant_Handler(srv interface{}, ctx context.Context, 
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(RuleAdminServiceServer).AddVariant(ctx, req.(*AddVariantRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _RuleAdminService_RemoveVariant_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetVariantRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RuleAdminServiceServer).RemoveVariant(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: RuleAdminService_RemoveVariant_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RuleAdminServiceServer).RemoveVariant(ctx, req.(*GetVariantRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -525,16 +558,20 @@ var RuleAdminService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _RuleAdminService_GetVariant_Handler,
 		},
 		{
-			MethodName: "GetVariantData",
-			Handler:    _RuleAdminService_GetVariantData_Handler,
-		},
-		{
 			MethodName: "CheckVariant",
 			Handler:    _RuleAdminService_CheckVariant_Handler,
 		},
 		{
+			MethodName: "GetVariantData",
+			Handler:    _RuleAdminService_GetVariantData_Handler,
+		},
+		{
 			MethodName: "AddVariant",
 			Handler:    _RuleAdminService_AddVariant_Handler,
+		},
+		{
+			MethodName: "RemoveVariant",
+			Handler:    _RuleAdminService_RemoveVariant_Handler,
 		},
 		{
 			MethodName: "SetVariantState",

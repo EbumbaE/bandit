@@ -66,9 +66,6 @@ func (c *Consumer) Handle(ctx context.Context, msg []byte) error {
 	if err = c.storage.SaveRuleVariants(ctx, rule.Service, rule.Context, event.RuleID, rule.Variants); err != nil {
 		return errors.Wrapf(err, "SaveRuleVariants for service[%s], context[%s], variants[%v]", rule.Service, rule.Context, rule.Variants)
 	}
-	if err = c.storage.SaveRuleVariants(ctx, rule.Service, rule.Context, event.RuleID, rule.Variants); err != nil {
-		return errors.Wrapf(err, "SaveRuleVariants for service[%s], context[%s], variants[%v]", rule.Service, rule.Context, rule.Variants)
-	}
 	if err = c.storage.SaveRuleVersion(ctx, rule.Service, rule.Context, rule.Version); err != nil {
 		return errors.Wrapf(err, "SaveRuleVersion for service[%s], context[%s], variants[%v]", rule.Service, rule.Context, rule.Version)
 	}

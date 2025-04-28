@@ -1,0 +1,16 @@
+postgres:
+  host: 0.0.0.1
+  port: 6432
+  user: rule-analytic-user
+  dbname: rule-analytic
+
+clickhouse:
+  host: 0.0.0.1
+  port: 6432
+  user: rule-analytic-user
+  dbname: rule-analytic
+
+kafka:
+  brokers: broker1, broker2
+  external_topic: external_rule_analytic
+  internal_topic: internal_rule_analytic

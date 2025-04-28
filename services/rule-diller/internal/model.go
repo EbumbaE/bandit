@@ -9,10 +9,11 @@ type Variant struct {
 }
 
 type PayloadAnalitic struct {
-	Service       string `json:"service"`
-	Context       string `json:"context"`
-	VariantID     string `json:"variant_id"`
-	BanditVersion uint64 `json:"bandit_version"`
+	Service     string `json:"service"`
+	Context     string `json:"context"`
+	RuleID      string `json:"rule_id"`
+	VariantID   string `json:"variant_id"`
+	RuleVersion uint64 `json:"rule_version"`
 }
 
 type Rule struct {
