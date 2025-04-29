@@ -2,14 +2,16 @@ package provider
 
 import (
 	"context"
-	"errors"
+	"fmt"
 
 	"github.com/opentracing/opentracing-go"
+	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
 	"github.com/EbumbaE/bandit/pkg/logger"
 	model "github.com/EbumbaE/bandit/services/rule-admin/internal"
 	"github.com/EbumbaE/bandit/services/rule-admin/internal/notifier"
+	"github.com/EbumbaE/bandit/services/rule-admin/internal/storage"
 )
 
 var ErrNotFound = errors.New("not found")
@@ -20,6 +22,7 @@ type Storage interface {
 	UpdateRule(ctx context.Context, rule model.Rule) (model.Rule, error)
 	SetRuleState(ctx context.Context, id string, state model.StateType) error
 	GetRuleServiceContext(ctx context.Context, ruleID string) (string, string, error)
+	GetActiveRuleByServiceContext(ctx context.Context, service, context string) (string, error)
 
 	GetVariant(ctx context.Context, ruleID, variantID string) (model.Variant, error)
 	GetVariants(ctx context.Context, ruleID string) ([]model.Variant, error)
@@ -54,6 +57,9 @@ func (p *Provider) GetRule(ctx context.Context, id string) (model.Rule, error) {
 
 	r, err := p.GetRule(ctx, id)
 	if err != nil {
+		if errors.Is(err, storage.ErrNotFound) {
+			return model.Rule{}, ErrNotFound
+		}
 		return model.Rule{}, err
 	}
 
@@ -76,6 +82,14 @@ func (p *Provider) CreateRule(ctx context.Context, r model.Rule) (model.Rule, er
 	}
 	if !ok {
 		return model.Rule{}, errors.New("validate bandit key")
+	}
+
+	id, err := p.storage.GetActiveRuleByServiceContext(ctx, r.Service, r.Context)
+	if err != nil && !errors.Is(err, storage.ErrNotFound) {
+		return model.Rule{}, err
+	}
+	if len(id) > 0 {
+		return model.Rule{}, fmt.Errorf("active rule already exist[%s]", id)
 	}
 
 	r, err = p.storage.CreateRule(ctx, r)
@@ -140,6 +154,9 @@ func (p *Provider) GetVariant(ctx context.Context, ruleID, variandID string) (mo
 
 	v, err := p.storage.GetVariant(ctx, ruleID, variandID)
 	if err != nil {
+		if errors.Is(err, storage.ErrNotFound) {
+			return model.Variant{}, ErrNotFound
+		}
 		return model.Variant{}, err
 	}
 

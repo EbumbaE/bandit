@@ -153,6 +153,24 @@ func (s *Storage) GetRuleServiceContext(ctx context.Context, ruleID string) (str
 	return r.Service, r.Context, nil
 }
 
+func (s *Storage) GetActiveRuleByServiceContext(ctx context.Context, service, context string) (string, error) {
+	query := `
+		SELECT id
+		FROM rule_info
+		WHERE service = $1 AND context = $2 AND state = $3;
+`
+
+	var id string
+	err := s.conn.GetSingle(ctx, &id, query, service, context, model.StateTypeEnable)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return "", ErrNotFound
+		}
+	}
+
+	return id, nil
+}
+
 func (s *Storage) CreateRule(ctx context.Context, rule model.Rule) (model.Rule, error) {
 	query := `
 		INSERT INTO rule_info

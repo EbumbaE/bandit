@@ -11,7 +11,7 @@ import (
 
 	desc "github.com/EbumbaE/bandit/pkg/genproto/rule-admin/api"
 	model "github.com/EbumbaE/bandit/services/rule-admin/internal"
-	"github.com/EbumbaE/bandit/services/rule-admin/internal/storage"
+	"github.com/EbumbaE/bandit/services/rule-admin/internal/provider"
 )
 
 type AdminProvider interface {
@@ -51,7 +51,7 @@ func (i *Implementation) GetRule(ctx context.Context, req *desc.GetRuleRequest) 
 
 	r, err := i.ruleProvider.GetRule(ctx, req.GetId())
 	if err != nil {
-		if errors.Is(err, storage.ErrNotFound) {
+		if errors.Is(err, provider.ErrNotFound) {
 			return nil, status.Error(codes.NotFound, err.Error())
 		}
 		return nil, status.Error(codes.Internal, err.Error())
@@ -113,7 +113,7 @@ func (i *Implementation) GetVariant(ctx context.Context, req *desc.GetVariantReq
 
 	v, err := i.ruleProvider.GetVariant(ctx, req.GetRuleId(), req.GetId())
 	if err != nil {
-		if errors.Is(err, storage.ErrNotFound) {
+		if errors.Is(err, provider.ErrNotFound) {
 			return nil, status.Error(codes.NotFound, err.Error())
 		}
 		return nil, status.Error(codes.Internal, err.Error())
@@ -132,7 +132,7 @@ func (i *Implementation) GetVariantData(ctx context.Context, req *desc.GetVarian
 
 	v, err := i.ruleProvider.GetVariant(ctx, req.GetRuleId(), req.GetId())
 	if err != nil {
-		if errors.Is(err, storage.ErrNotFound) {
+		if errors.Is(err, provider.ErrNotFound) {
 			return nil, status.Error(codes.NotFound, err.Error())
 		}
 		return nil, status.Error(codes.Internal, err.Error())
@@ -184,7 +184,7 @@ func (i *Implementation) GetRuleServiceContext(ctx context.Context, req *desc.Ge
 
 	service, context, err := i.ruleProvider.GetRuleServiceContext(ctx, req.GetId())
 	if err != nil {
-		if errors.Is(err, storage.ErrNotFound) {
+		if errors.Is(err, provider.ErrNotFound) {
 			return nil, status.Error(codes.NotFound, err.Error())
 		}
 		return nil, status.Error(codes.Internal, err.Error())
@@ -248,7 +248,7 @@ func (i *Implementation) CheckRule(ctx context.Context, req *desc.CheckRequest) 
 
 	_, err := i.ruleProvider.GetRule(ctx, req.GetId())
 	if err != nil {
-		if errors.Is(err, storage.ErrNotFound) {
+		if errors.Is(err, provider.ErrNotFound) {
 			return &desc.CheckResponse{IsExist: false}, nil
 		}
 		return nil, status.Error(codes.Internal, err.Error())
@@ -267,7 +267,7 @@ func (i *Implementation) CheckVariant(ctx context.Context, req *desc.CheckReques
 
 	_, err := i.ruleProvider.GetVariant(ctx, req.GetId(), req.GetVariantId())
 	if err != nil {
-		if errors.Is(err, storage.ErrNotFound) {
+		if errors.Is(err, provider.ErrNotFound) {
 			return &desc.CheckResponse{IsExist: false}, nil
 		}
 		return nil, status.Error(codes.Internal, err.Error())
