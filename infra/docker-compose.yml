@@ -1,43 +1,91 @@
 version: '3'
 
 services:
-  
+  rule_admin:
+    build:
+      context: ../.
+      dockerfile: ./infra/rule_admin.Dockerfile
+    ports:
+      - "8444:8444"
+      - "8445:8445"
+    depends_on:
+      - rule_admin_db
+      - kafka
+    networks:
+      - kafka-net
+      - redis-net
+
   rule_admin_db:
     image: postgres:10
     ports:
     - "5432:5432"
     environment:
-      POSTGRES_DB: rule-admin
+      POSTGRES_DB: rule-admin-db
       POSTGRES_USER: rule-admin-user
       POSTGRES_PASSWORD: rule-admin-password
 
+  bandit_indexer_db:
+    image: postgres:10
+    ports:
+    - "5433:5432"
+    environment:
+      POSTGRES_DB: bandit-indexer-db
+      POSTGRES_USER: bandit-indexer-user
+      POSTGRES_PASSWORD: bandit-indexer-password
+
+  rule_analytic_db:
+    image: postgres:10
+    ports:
+    - "5434:5432"
+    environment:
+      POSTGRES_DB: rule-analytic-db
+      POSTGRES_USER: rule-analytic-user
+      POSTGRES_PASSWORD: rule-analytic-password
+
+
+  zookeeper:
+    image: zookeeper:3.8
+    hostname: zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      ZOO_MY_ID: 1
+      ZOO_SERVERS: "server.1=zookeeper:2888:3888;2181"
+    networks:
+      - kafka-net
+
   kafka:
-    image: wurstmeister/kafka
+    image: bitnami/kafka:3.6
     hostname: kafka
     ports:
       - "9092:9092"
-    links:
-      - zookeeper
+      - "9093:9093"
     environment:
-      KAFKA_ADVERTISED_HOST_NAME: "127.0.0.1"
-      KAFKA_ADVERTISED_PORT: "9092"
-      KAFKA_ZOOKEEPER_CONNECT: "zookeeper:2181"
-      KAFKA_CREATE_TOPICS: "example-topic:2:1"
+      KAFKA_CFG_ZOOKEEPER_CONNECT: "zookeeper:2181"
+      KAFKA_CFG_ADVERTISED_LISTENERS: "PLAINTEXT://kafka:9092,EXTERNAL://localhost:9093"
+      KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: "PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT"
+      KAFKA_CFG_LISTENERS: "PLAINTEXT://:9092,EXTERNAL://:9093"
+      KAFKA_CFG_INTER_BROKER_LISTENER_NAME: "PLAINTEXT"
+      KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE: "false"
+      KAFKA_CFG_NUM_PARTITIONS: "3"
+      KAFKA_CFG_DEFAULT_REPLICATION_FACTOR: "1"
+      KAFKA_CREATE_TOPICS: "internal_rule_analytic:1:1,external_rule_analytic:1:1,bandit_indexer_event:1:1,rule_admin_event:1:1"
     depends_on:
       - zookeeper
-    container_name: example-kafka
-  
-  zookeeper:
-    image: wurstmeister/zookeeper
-    ports:
-      - "2181:2181"
-    container_name: example-zookeeper
+    networks:
+      - kafka-net
 
   redis:
     image: 'bitnami/redis:latest'
     environment:
       - ALLOW_EMPTY_PASSWORD=yes
     networks:
-      - app-network
+      - redis-net
     ports:
       - '6379:6379'
+
+networks:
+  kafka-net:
+    driver: bridge
+  redis-net:
+    driver: bridge

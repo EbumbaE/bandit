@@ -21,7 +21,7 @@ const _ = grpc.SupportPackageIsVersion7
 
 const (
 	RuleAdminService_GetRule_FullMethodName               = "/bandit.services.ruleadmin.RuleAdminService/GetRule"
-	RuleAdminService_ChechRule_FullMethodName             = "/bandit.services.ruleadmin.RuleAdminService/ChechRule"
+	RuleAdminService_CheckRule_FullMethodName             = "/bandit.services.ruleadmin.RuleAdminService/CheckRule"
 	RuleAdminService_CreateRule_FullMethodName            = "/bandit.services.ruleadmin.RuleAdminService/CreateRule"
 	RuleAdminService_UpdateRule_FullMethodName            = "/bandit.services.ruleadmin.RuleAdminService/UpdateRule"
 	RuleAdminService_SetRuleState_FullMethodName          = "/bandit.services.ruleadmin.RuleAdminService/SetRuleState"
@@ -41,7 +41,7 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type RuleAdminServiceClient interface {
 	GetRule(ctx context.Context, in *GetRuleRequest, opts ...grpc.CallOption) (*RuleResponse, error)
-	ChechRule(ctx context.Context, in *CheckRequest, opts ...grpc.CallOption) (*CheckResponse, error)
+	CheckRule(ctx context.Context, in *CheckRequest, opts ...grpc.CallOption) (*CheckResponse, error)
 	CreateRule(ctx context.Context, in *CreateRuleRequest, opts ...grpc.CallOption) (*RuleResponse, error)
 	UpdateRule(ctx context.Context, in *ModifyRuleRequest, opts ...grpc.CallOption) (*RuleResponse, error)
 	SetRuleState(ctx context.Context, in *SetRuleStateRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
@@ -73,9 +73,9 @@ func (c *ruleAdminServiceClient) GetRule(ctx context.Context, in *GetRuleRequest
 	return out, nil
 }
 
-func (c *ruleAdminServiceClient) ChechRule(ctx context.Context, in *CheckRequest, opts ...grpc.CallOption) (*CheckResponse, error) {
+func (c *ruleAdminServiceClient) CheckRule(ctx context.Context, in *CheckRequest, opts ...grpc.CallOption) (*CheckResponse, error) {
 	out := new(CheckResponse)
-	err := c.cc.Invoke(ctx, RuleAdminService_ChechRule_FullMethodName, in, out, opts...)
+	err := c.cc.Invoke(ctx, RuleAdminService_CheckRule_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -195,7 +195,7 @@ func (c *ruleAdminServiceClient) GetWantedRegistry(ctx context.Context, in *empt
 // for forward compatibility
 type RuleAdminServiceServer interface {
 	GetRule(context.Context, *GetRuleRequest) (*RuleResponse, error)
-	ChechRule(context.Context, *CheckRequest) (*CheckResponse, error)
+	CheckRule(context.Context, *CheckRequest) (*CheckResponse, error)
 	CreateRule(context.Context, *CreateRuleRequest) (*RuleResponse, error)
 	UpdateRule(context.Context, *ModifyRuleRequest) (*RuleResponse, error)
 	SetRuleState(context.Context, *SetRuleStateRequest) (*emptypb.Empty, error)
@@ -218,8 +218,8 @@ type UnimplementedRuleAdminServiceServer struct {
 func (UnimplementedRuleAdminServiceServer) GetRule(context.Context, *GetRuleRequest) (*RuleResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetRule not implemented")
 }
-func (UnimplementedRuleAdminServiceServer) ChechRule(context.Context, *CheckRequest) (*CheckResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ChechRule not implemented")
+func (UnimplementedRuleAdminServiceServer) CheckRule(context.Context, *CheckRequest) (*CheckResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CheckRule not implemented")
 }
 func (UnimplementedRuleAdminServiceServer) CreateRule(context.Context, *CreateRuleRequest) (*RuleResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateRule not implemented")
@@ -288,20 +288,20 @@ func _RuleAdminService_GetRule_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RuleAdminService_ChechRule_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _RuleAdminService_CheckRule_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(CheckRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(RuleAdminServiceServer).ChechRule(ctx, in)
+		return srv.(RuleAdminServiceServer).CheckRule(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: RuleAdminService_ChechRule_FullMethodName,
+		FullMethod: RuleAdminService_CheckRule_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RuleAdminServiceServer).ChechRule(ctx, req.(*CheckRequest))
+		return srv.(RuleAdminServiceServer).CheckRule(ctx, req.(*CheckRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -534,8 +534,8 @@ var RuleAdminService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _RuleAdminService_GetRule_Handler,
 		},
 		{
-			MethodName: "ChechRule",
-			Handler:    _RuleAdminService_ChechRule_Handler,
+			MethodName: "CheckRule",
+			Handler:    _RuleAdminService_CheckRule_Handler,
 		},
 		{
 			MethodName: "CreateRule",

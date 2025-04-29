@@ -1255,7 +1255,7 @@ var file_rule_admin_api_admin_proto_rawDesc = []byte{
 	0x65, 0x73, 0x2e, 0x72, 0x75, 0x6c, 0x65, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x52, 0x75, 0x6c,
 	0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x1b, 0x82, 0xd3, 0xe4, 0x93, 0x02,
 	0x15, 0x12, 0x13, 0x2f, 0x76, 0x31, 0x2f, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2f, 0x72, 0x75, 0x6c,
-	0x65, 0x2f, 0x7b, 0x69, 0x64, 0x7d, 0x12, 0x81, 0x01, 0x0a, 0x09, 0x43, 0x68, 0x65, 0x63, 0x68,
+	0x65, 0x2f, 0x7b, 0x69, 0x64, 0x7d, 0x12, 0x81, 0x01, 0x0a, 0x09, 0x43, 0x68, 0x65, 0x63, 0x6b,
 	0x52, 0x75, 0x6c, 0x65, 0x12, 0x27, 0x2e, 0x62, 0x61, 0x6e, 0x64, 0x69, 0x74, 0x2e, 0x73, 0x65,
 	0x72, 0x76, 0x69, 0x63, 0x65, 0x73, 0x2e, 0x72, 0x75, 0x6c, 0x65, 0x61, 0x64, 0x6d, 0x69, 0x6e,
 	0x2e, 0x43, 0x68, 0x65, 0x63, 0x6b, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x28, 0x2e,
@@ -1419,7 +1419,7 @@ var file_rule_admin_api_admin_proto_depIdxs = []int32{
 	14, // 9: bandit.services.ruleadmin.CreateWantedBanditRequest.data:type_name -> bandit.services.ruleadmin.WantedBandit
 	14, // 10: bandit.services.ruleadmin.GetWantedRegistryResponse.registry:type_name -> bandit.services.ruleadmin.WantedBandit
 	3,  // 11: bandit.services.ruleadmin.RuleAdminService.GetRule:input_type -> bandit.services.ruleadmin.GetRuleRequest
-	17, // 12: bandit.services.ruleadmin.RuleAdminService.ChechRule:input_type -> bandit.services.ruleadmin.CheckRequest
+	17, // 12: bandit.services.ruleadmin.RuleAdminService.CheckRule:input_type -> bandit.services.ruleadmin.CheckRequest
 	5,  // 13: bandit.services.ruleadmin.RuleAdminService.CreateRule:input_type -> bandit.services.ruleadmin.CreateRuleRequest
 	4,  // 14: bandit.services.ruleadmin.RuleAdminService.UpdateRule:input_type -> bandit.services.ruleadmin.ModifyRuleRequest
 	6,  // 15: bandit.services.ruleadmin.RuleAdminService.SetRuleState:input_type -> bandit.services.ruleadmin.SetRuleStateRequest
@@ -1433,7 +1433,7 @@ var file_rule_admin_api_admin_proto_depIdxs = []int32{
 	15, // 23: bandit.services.ruleadmin.RuleAdminService.CreateWantedBandit:input_type -> bandit.services.ruleadmin.CreateWantedBanditRequest
 	19, // 24: bandit.services.ruleadmin.RuleAdminService.GetWantedRegistry:input_type -> google.protobuf.Empty
 	7,  // 25: bandit.services.ruleadmin.RuleAdminService.GetRule:output_type -> bandit.services.ruleadmin.RuleResponse
-	18, // 26: bandit.services.ruleadmin.RuleAdminService.ChechRule:output_type -> bandit.services.ruleadmin.CheckResponse
+	18, // 26: bandit.services.ruleadmin.RuleAdminService.CheckRule:output_type -> bandit.services.ruleadmin.CheckResponse
 	7,  // 27: bandit.services.ruleadmin.RuleAdminService.CreateRule:output_type -> bandit.services.ruleadmin.RuleResponse
 	7,  // 28: bandit.services.ruleadmin.RuleAdminService.UpdateRule:output_type -> bandit.services.ruleadmin.RuleResponse
 	19, // 29: bandit.services.ruleadmin.RuleAdminService.SetRuleState:output_type -> google.protobuf.Empty

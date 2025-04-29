@@ -1,17 +1,14 @@
 service:
-  rule_diller_address: 0.0.0.0:8444
-  swagger_address: 0.0.0.0:8445
-  swagger_host: rule.admin.swagger.bandit.ebumba.ru
-  bandit_indexer_address: rule-diller:8443
-  rule_admin_address: rule-admin:8443
+  rule_diller_address: localhost:8446
+  swagger_address: :8445
+  swagger_host: localhost:8447
+  bandit_indexer_address: localhost:8448
+  rule_admin_address: localhost:8444
   connection_timeout: 10s
 
 redis:
-  host: 0.0.0.1
-  port: 6432
-  user: rule-admin-user
-  dbname: rule-admin
+  dsn: redis://localhost:6379/0
 
 kafka:
-  brokers: broker1, broker2
+  brokers: [localhost:9093]
   topic: bandit_indexer_event

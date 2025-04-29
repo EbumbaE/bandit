@@ -1,8 +1,5 @@
 postgres:
-  host: 0.0.0.1
-  port: 6432
-  user: rule-analytic-user
-  dbname: rule-analytic
+  dsn: postgres://rule-analytic-user:rule-analytic-password@localhost:5432/rule-analytic-db
 
 clickhouse:
   host: 0.0.0.1
@@ -11,6 +8,6 @@ clickhouse:
   dbname: rule-analytic
 
 kafka:
-  brokers: broker1, broker2
+  brokers: [localhost:9093]
   external_topic: external_rule_analytic
   internal_topic: internal_rule_analytic

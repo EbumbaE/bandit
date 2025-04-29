@@ -73,12 +73,7 @@ type RuleAdminService struct {
 }
 
 type Redis struct {
-	Host     string `yaml:"host"`
-	Port     string `yaml:"port"`
-	User     string `yaml:"user"`
-	DBName   string `yaml:"dbname"`
-	Password string
-	Dsn      string
+	Dsn string `yaml:"dsn"`
 }
 
 type Kafka struct {

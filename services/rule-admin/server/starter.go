@@ -21,7 +21,7 @@ import (
 func InitRuleAdminSwagger(ctx context.Context, wg *sync.WaitGroup, swaggerAddr, swaggerHost, grpcHost string) {
 	httpMux := http.NewServeMux()
 
-	relativePath := "./pkg/genproto/rule-admin/api/rule-admin.swagger.json"
+	relativePath := "../../../pkg/genproto/rule-admin/api/admin.swagger.json"
 	absolutePath, err := filepath.Abs(relativePath)
 	if err != nil {
 		logger.Error("build absolutePath", zap.Error(err))

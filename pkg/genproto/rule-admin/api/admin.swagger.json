@@ -149,7 +149,7 @@
     },
     "/v1/admin/rule/{id}/check": {
       "get": {
-        "operationId": "RuleAdminService_ChechRule",
+        "operationId": "RuleAdminService_CheckRule",
         "responses": {
           "200": {
             "description": "A successful response.",

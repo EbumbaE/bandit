@@ -83,7 +83,7 @@ func (a *application) initProducers(ctx context.Context) {
 func (a *application) initClients(ctx context.Context) {
 	conn, err := grpc.DialContext(ctx, a.cfg.Service.RuleDillerAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		logger.Fatal("connect to rule-admin", zap.Error(err))
+		logger.Fatal("connect to rule-diller", zap.Error(err))
 	}
 
 	a.clients.ruleDiller = rule_diller_wrapper.NewRuleDillerWrapper(rule_diller_client.NewRuleDillerServiceClient(conn))

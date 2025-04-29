@@ -4,10 +4,10 @@ test:
   cycle_count: 10000
 
 service:
-  rule_diller_adress: rule-diller:8443
-  rule_admin_address: rule-admin:8443
+  rule_diller_adress: localhost:8446
+  rule_admin_address: localhost:8444
   connection_timeout: 10s
 
 kafka:
-  brokers: broker1, broker2
+  brokers: [localhost:9093]
   topic: external_rule_analytic
