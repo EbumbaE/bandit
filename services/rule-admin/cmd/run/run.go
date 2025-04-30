@@ -3,7 +3,6 @@ package run
 import (
 	"context"
 	"flag"
-	"fmt"
 	"log"
 	"os"
 	"os/signal"
@@ -38,7 +37,6 @@ func Run() {
 
 	defer app.Close()
 
-	fmt.Println(*swaggerPath)
 	if err := app.Run(ctx, *swaggerPath); err != nil {
 		logger.Fatal("can't run app", zap.Error(err))
 	}
