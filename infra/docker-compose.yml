@@ -2,6 +2,7 @@ version: '3'
 
 services:
   rule_admin:
+    hostname: rule-admin
     build:
       context: ../.
       dockerfile: ./infra/rule_admin.Dockerfile
@@ -9,38 +10,56 @@ services:
       - "8444:8444"
       - "8445:8445"
     depends_on:
-      - rule_admin_db
-      - kafka
+      rule_admin_db:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    restart: on-failure
     networks:
       - kafka-net
       - redis-net
+      - psql-net
 
   rule_admin_db:
     image: postgres:13
+    hostname: rule-admin-db
     ports:
     - "5432:5432"
     environment:
       POSTGRES_DB: rule-admin-db
       POSTGRES_USER: rule-admin-user
       POSTGRES_PASSWORD: rule-admin-password
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rule-admin-user -d rule-admin-db"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - psql-net
 
   bandit_indexer_db:
     image: postgres:13
+    hostname: bandit-indexer-db
     ports:
     - "5433:5432"
     environment:
       POSTGRES_DB: bandit-indexer-db
       POSTGRES_USER: bandit-indexer-user
       POSTGRES_PASSWORD: bandit-indexer-password
+    networks:
+      - psql-net
 
   rule_analytic_db:
     image: postgres:13
+    hostname: rule-analytic-db
     ports:
     - "5434:5432"
     environment:
       POSTGRES_DB: rule-analytic-db
       POSTGRES_USER: rule-analytic-user
       POSTGRES_PASSWORD: rule-analytic-password
+    networks:
+      - psql-net
 
   zookeeper:
     image: zookeeper:3.8
@@ -52,6 +71,11 @@ services:
       ZOO_SERVERS: "server.1=zookeeper:2888:3888;2181"
     networks:
       - kafka-net
+    healthcheck:
+      test: ["CMD-SHELL", "zkServer.sh status"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
 
   kafka:
     image: bitnami/kafka:3.6
@@ -70,7 +94,8 @@ services:
       KAFKA_CFG_DEFAULT_REPLICATION_FACTOR: "1"
       KAFKA_CREATE_TOPICS: "internal_rule_analytic:1:1,external_rule_analytic:1:1,bandit_indexer_event:1:1,rule_admin_event:1:1"
     depends_on:
-      - zookeeper
+      zookeeper:
+        condition: service_healthy
     networks:
       - kafka-net
 
@@ -87,4 +112,6 @@ networks:
   kafka-net:
     driver: bridge
   redis-net:
+    driver: bridge
+  psql-net:
     driver: bridge

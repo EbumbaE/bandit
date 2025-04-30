@@ -18,11 +18,10 @@ import (
 	"github.com/EbumbaE/bandit/pkg/logger"
 )
 
-func InitRuleAdminSwagger(ctx context.Context, wg *sync.WaitGroup, swaggerAddr, swaggerHost, grpcHost string) {
+func InitRuleAdminSwagger(ctx context.Context, wg *sync.WaitGroup, swaggerPath, swaggerAddr, swaggerHost, grpcHost string) {
 	httpMux := http.NewServeMux()
 
-	relativePath := "../../../pkg/genproto/rule-admin/api/admin.swagger.json"
-	absolutePath, err := filepath.Abs(relativePath)
+	absolutePath, err := filepath.Abs(swaggerPath)
 	if err != nil {
 		logger.Error("build absolutePath", zap.Error(err))
 	}

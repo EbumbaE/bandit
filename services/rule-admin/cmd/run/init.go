@@ -116,9 +116,9 @@ func (a *application) initService() {
 	a.service = rule_admin_service.NewService(a.provider)
 }
 
-func (a *application) Run(ctx context.Context) error {
+func (a *application) Run(ctx context.Context, swaggerPath string) error {
 	server.StartRuleAdmin(ctx, a.service, a.wg, a.cfg.Service.GrpcAddress)
-	server.InitRuleAdminSwagger(ctx, a.wg, a.cfg.Service.SwaggerAddress, a.cfg.Service.SwaggerHost, a.cfg.Service.GrpcAddress)
+	server.InitRuleAdminSwagger(ctx, a.wg, swaggerPath, a.cfg.Service.SwaggerAddress, a.cfg.Service.SwaggerHost, a.cfg.Service.GrpcAddress)
 
 	return nil
 }
