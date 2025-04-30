@@ -12,7 +12,7 @@ import (
 )
 
 type DillerProvider interface {
-	GetRuleData(ctx context.Context, service, ctxKey string) ([]byte, []byte, error)
+	GetRuleData(ctx context.Context, service, ctxKey string) (string, string, error)
 	GetRuleStatistic(ctx context.Context, service, ctxKey string) ([]model.Variant, error)
 }
 

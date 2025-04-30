@@ -27,7 +27,7 @@ func init() {
 }
 
 type DillerClient interface {
-	GetRuleData(ctx context.Context, service, context string) ([]byte, []byte, error)
+	GetRuleData(ctx context.Context, service, context string) (string, string, error)
 }
 
 type AdminClient interface {
@@ -40,7 +40,7 @@ type AdminClient interface {
 }
 
 type Notifier interface {
-	SendAnalytic(ctx context.Context, action notifier.ActionType, amount float64, payload []byte) error
+	SendAnalytic(ctx context.Context, action notifier.ActionType, amount float64, payload string) error
 }
 
 type Provider struct {

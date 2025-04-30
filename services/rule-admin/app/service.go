@@ -64,6 +64,10 @@ func (i *Implementation) CreateRule(ctx context.Context, req *desc.CreateRuleReq
 	span, ctx := opentracing.StartSpanFromContext(ctx, "api/CreateRule")
 	defer span.Finish()
 
+	if len(req.Name) == 0 || len(req.BanditKey) == 0 || len(req.Context) == 0 || len(req.Service) == 0 {
+		return nil, status.Error(codes.InvalidArgument, "Invalid name, bandit_key, context or serivce")
+	}
+
 	r, err := i.ruleProvider.CreateRule(ctx, encodeCreateRule(req))
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
@@ -167,7 +171,7 @@ func (i *Implementation) SetVariantState(ctx context.Context, req *desc.SetVaria
 		return nil, status.Error(codes.InvalidArgument, "empty id")
 	}
 
-	if err := i.ruleProvider.SetVariantState(ctx, req.GetId(), req.GetRuleId(), encodeStateType(req.GetState())); err != nil {
+	if err := i.ruleProvider.SetVariantState(ctx, req.GetRuleId(), req.GetId(), encodeStateType(req.GetState())); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
@@ -246,7 +250,7 @@ func (i *Implementation) CheckRule(ctx context.Context, req *desc.CheckRequest) 
 		return nil, status.Error(codes.InvalidArgument, "empty id")
 	}
 
-	_, err := i.ruleProvider.GetRule(ctx, req.GetId())
+	r, err := i.ruleProvider.GetRule(ctx, req.GetId())
 	if err != nil {
 		if errors.Is(err, provider.ErrNotFound) {
 			return &desc.CheckResponse{IsExist: false}, nil
@@ -254,7 +258,7 @@ func (i *Implementation) CheckRule(ctx context.Context, req *desc.CheckRequest) 
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	return &desc.CheckResponse{IsExist: true}, nil
+	return &desc.CheckResponse{IsExist: r.State == model.StateTypeEnable}, nil
 }
 
 func (i *Implementation) CheckVariant(ctx context.Context, req *desc.CheckRequest) (*desc.CheckResponse, error) {
@@ -265,7 +269,7 @@ func (i *Implementation) CheckVariant(ctx context.Context, req *desc.CheckReques
 		return nil, status.Error(codes.InvalidArgument, "empty id")
 	}
 
-	_, err := i.ruleProvider.GetVariant(ctx, req.GetId(), req.GetVariantId())
+	v, err := i.ruleProvider.GetVariant(ctx, req.GetId(), req.GetVariantId())
 	if err != nil {
 		if errors.Is(err, provider.ErrNotFound) {
 			return &desc.CheckResponse{IsExist: false}, nil
@@ -273,7 +277,7 @@ func (i *Implementation) CheckVariant(ctx context.Context, req *desc.CheckReques
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	return &desc.CheckResponse{IsExist: true}, nil
+	return &desc.CheckResponse{IsExist: v.State == model.StateTypeEnable}, nil
 }
 
 func encodeModifyRule(v *desc.ModifyRuleRequest) model.Rule {
@@ -288,6 +292,9 @@ func encodeCreateRule(v *desc.CreateRuleRequest) model.Rule {
 	return model.Rule{
 		Name:        v.Name,
 		Description: v.Description,
+		BanditKey:   v.BanditKey,
+		Service:     v.Service,
+		Context:     v.Context,
 		Variants:    encodeVariants(v.GetVariants()),
 	}
 }
@@ -312,17 +319,17 @@ func decodeRule(r model.Rule) *desc.Rule {
 func decodeStateType(v model.StateType) desc.State {
 	switch v {
 	case model.StateTypeEnable:
-		return desc.State_RULE_STATE_ENABLED
+		return desc.State_STATE_ENABLED
 	case model.StateTypeDisable:
-		return desc.State_RULE_STATE_DISABLED
+		return desc.State_STATE_DISABLED
 	default:
-		return desc.State_RULE_STATE_UNSPECIFIED
+		return desc.State_STATE_UNSPECIFIED
 	}
 }
 
 func encodeStateType(v desc.State) model.StateType {
 	switch v {
-	case desc.State_RULE_STATE_ENABLED:
+	case desc.State_STATE_ENABLED:
 		return model.StateTypeEnable
 	default:
 		return model.StateTypeDisable

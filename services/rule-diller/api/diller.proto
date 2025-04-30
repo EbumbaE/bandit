@@ -25,8 +25,8 @@ message GetRuleRequest {
 }
 
 message GetRuleDataResponse {
-  bytes data = 1;
-  bytes payload = 2;
+  string data = 1;
+  string payload = 2;
 }
 
 message GetRuleStatisticResponse {

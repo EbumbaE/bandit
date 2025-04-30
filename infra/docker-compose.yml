@@ -16,7 +16,7 @@ services:
       - redis-net
 
   rule_admin_db:
-    image: postgres:10
+    image: postgres:13
     ports:
     - "5432:5432"
     environment:
@@ -25,7 +25,7 @@ services:
       POSTGRES_PASSWORD: rule-admin-password
 
   bandit_indexer_db:
-    image: postgres:10
+    image: postgres:13
     ports:
     - "5433:5432"
     environment:
@@ -34,14 +34,13 @@ services:
       POSTGRES_PASSWORD: bandit-indexer-password
 
   rule_analytic_db:
-    image: postgres:10
+    image: postgres:13
     ports:
     - "5434:5432"
     environment:
       POSTGRES_DB: rule-analytic-db
       POSTGRES_USER: rule-analytic-user
       POSTGRES_PASSWORD: rule-analytic-password
-
 
   zookeeper:
     image: zookeeper:3.8
@@ -66,7 +65,7 @@ services:
       KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: "PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT"
       KAFKA_CFG_LISTENERS: "PLAINTEXT://:9092,EXTERNAL://:9093"
       KAFKA_CFG_INTER_BROKER_LISTENER_NAME: "PLAINTEXT"
-      KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE: "false"
+      KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE: "true"
       KAFKA_CFG_NUM_PARTITIONS: "3"
       KAFKA_CFG_DEFAULT_REPLICATION_FACTOR: "1"
       KAFKA_CREATE_TOPICS: "internal_rule_analytic:1:1,external_rule_analytic:1:1,bandit_indexer_event:1:1,rule_admin_event:1:1"

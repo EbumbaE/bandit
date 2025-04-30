@@ -101,12 +101,10 @@
       "type": "object",
       "properties": {
         "data": {
-          "type": "string",
-          "format": "byte"
+          "type": "string"
         },
         "payload": {
-          "type": "string",
-          "format": "byte"
+          "type": "string"
         }
       }
     },

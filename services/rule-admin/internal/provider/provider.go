@@ -55,7 +55,7 @@ func (p *Provider) GetRule(ctx context.Context, id string) (model.Rule, error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "provider/GetRule")
 	defer span.Finish()
 
-	r, err := p.GetRule(ctx, id)
+	r, err := p.storage.GetRule(ctx, id)
 	if err != nil {
 		if errors.Is(err, storage.ErrNotFound) {
 			return model.Rule{}, ErrNotFound
@@ -92,20 +92,20 @@ func (p *Provider) CreateRule(ctx context.Context, r model.Rule) (model.Rule, er
 		return model.Rule{}, fmt.Errorf("active rule already exist[%s]", id)
 	}
 
+	variants := r.Variants
+
 	r, err = p.storage.CreateRule(ctx, r)
 	if err != nil {
 		return model.Rule{}, err
 	}
 
-	var createdVariants []model.Variant
-	for _, v := range r.Variants {
-		v, err = p.AddVariant(ctx, r.Id, v)
+	for _, v := range variants {
+		addedV, err := p.AddVariant(ctx, r.Id, v)
 		if err != nil {
-			return model.Rule{}, err
+			return r, err
 		}
-		createdVariants = append(createdVariants, v)
+		r.Variants = append(r.Variants, addedV)
 	}
-	r.Variants = createdVariants
 
 	if err := p.notifier.SendRule(ctx, r.Id, notifier.ActionCreate); err != nil {
 		logger.Error("failed send create rule event", zap.Error(err))
@@ -167,7 +167,7 @@ func (p *Provider) AddVariant(ctx context.Context, ruleID string, v model.Varian
 	span, ctx := opentracing.StartSpanFromContext(ctx, "provider/AddVariant")
 	defer span.Finish()
 
-	_, err := p.GetRule(ctx, ruleID)
+	_, err := p.storage.GetRule(ctx, ruleID)
 	if err != nil {
 		return model.Variant{}, err
 	}

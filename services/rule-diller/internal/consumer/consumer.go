@@ -14,7 +14,7 @@ type Indexer interface {
 
 type Admin interface {
 	GetRuleServiceContext(ctx context.Context, ruleID string) (string, string, error)
-	GetVariantData(ctx context.Context, ruleID string, variantID string) ([]byte, error)
+	GetVariantData(ctx context.Context, ruleID string, variantID string) (string, error)
 }
 
 type Storage interface {

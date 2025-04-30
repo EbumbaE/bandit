@@ -64,11 +64,12 @@ service RuleAdminService {
       body: "*"
     };
   };
-  rpc RemoveVariant(GetVariantRequest) returns (google.protobuf.Empty) {
-    option (google.api.http) = {
-      delete: "/v1/admin/variant/{id}"
-    };
-  };
+  // TODO
+  // rpc RemoveVariant(GetVariantRequest) returns (google.protobuf.Empty) {
+  //   option (google.api.http) = {
+  //     delete: "/v1/admin/variant/{id}"
+  //   };
+  // };
   rpc SetVariantState(SetVariantStateRequest) returns (google.protobuf.Empty) {
     option (google.api.http) = {
       put: "/v1/admin/variant/state/{id}"
@@ -103,7 +104,7 @@ message Rule {
 message Variant {
   string id = 1;
   string name = 2;
-  bytes data = 3;
+  string data = 3;
   State state = 4;
 }
 
@@ -122,7 +123,8 @@ message CreateRuleRequest {
   string description = 2;
   string service = 3;
   string context = 4;
-  repeated Variant variants = 5;
+  string bandit_key = 5;
+  repeated Variant variants = 6;
 }
 
 message SetRuleStateRequest {
@@ -160,9 +162,9 @@ message VariantResponse {
 }
 
 enum State {
-  RULE_STATE_UNSPECIFIED = 0;
-  RULE_STATE_ENABLED = 1;
-  RULE_STATE_DISABLED = 2;
+  STATE_UNSPECIFIED = 0;
+  STATE_ENABLED = 1;
+  STATE_DISABLED = 2;
 }
 
 message GetRuleServiceContextResponse {

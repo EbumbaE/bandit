@@ -22,7 +22,7 @@ var (
 type Variant struct {
 	Id    string    `db:"id"`
 	Name  string    `db:"name"`
-	Data  []byte    `db:"data"`
+	Data  string    `db:"data"`
 	State StateType `db:"state"`
 }
 

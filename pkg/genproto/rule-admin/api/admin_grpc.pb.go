@@ -30,7 +30,6 @@ const (
 	RuleAdminService_CheckVariant_FullMethodName          = "/bandit.services.ruleadmin.RuleAdminService/CheckVariant"
 	RuleAdminService_GetVariantData_FullMethodName        = "/bandit.services.ruleadmin.RuleAdminService/GetVariantData"
 	RuleAdminService_AddVariant_FullMethodName            = "/bandit.services.ruleadmin.RuleAdminService/AddVariant"
-	RuleAdminService_RemoveVariant_FullMethodName         = "/bandit.services.ruleadmin.RuleAdminService/RemoveVariant"
 	RuleAdminService_SetVariantState_FullMethodName       = "/bandit.services.ruleadmin.RuleAdminService/SetVariantState"
 	RuleAdminService_CreateWantedBandit_FullMethodName    = "/bandit.services.ruleadmin.RuleAdminService/CreateWantedBandit"
 	RuleAdminService_GetWantedRegistry_FullMethodName     = "/bandit.services.ruleadmin.RuleAdminService/GetWantedRegistry"
@@ -50,7 +49,13 @@ type RuleAdminServiceClient interface {
 	CheckVariant(ctx context.Context, in *CheckRequest, opts ...grpc.CallOption) (*CheckResponse, error)
 	GetVariantData(ctx context.Context, in *GetVariantRequest, opts ...grpc.CallOption) (*VariantResponse, error)
 	AddVariant(ctx context.Context, in *AddVariantRequest, opts ...grpc.CallOption) (*VariantResponse, error)
-	RemoveVariant(ctx context.Context, in *GetVariantRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	// TODO
+	//
+	//	rpc RemoveVariant(GetVariantRequest) returns (google.protobuf.Empty) {
+	//	  option (google.api.http) = {
+	//	    delete: "/v1/admin/variant/{id}"
+	//	  };
+	//	};
 	SetVariantState(ctx context.Context, in *SetVariantStateRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	CreateWantedBandit(ctx context.Context, in *CreateWantedBanditRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	GetWantedRegistry(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetWantedRegistryResponse, error)
@@ -154,15 +159,6 @@ func (c *ruleAdminServiceClient) AddVariant(ctx context.Context, in *AddVariantR
 	return out, nil
 }
 
-func (c *ruleAdminServiceClient) RemoveVariant(ctx context.Context, in *GetVariantRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
-	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, RuleAdminService_RemoveVariant_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *ruleAdminServiceClient) SetVariantState(ctx context.Context, in *SetVariantStateRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, RuleAdminService_SetVariantState_FullMethodName, in, out, opts...)
@@ -204,7 +200,13 @@ type RuleAdminServiceServer interface {
 	CheckVariant(context.Context, *CheckRequest) (*CheckResponse, error)
 	GetVariantData(context.Context, *GetVariantRequest) (*VariantResponse, error)
 	AddVariant(context.Context, *AddVariantRequest) (*VariantResponse, error)
-	RemoveVariant(context.Context, *GetVariantRequest) (*emptypb.Empty, error)
+	// TODO
+	//
+	//	rpc RemoveVariant(GetVariantRequest) returns (google.protobuf.Empty) {
+	//	  option (google.api.http) = {
+	//	    delete: "/v1/admin/variant/{id}"
+	//	  };
+	//	};
 	SetVariantState(context.Context, *SetVariantStateRequest) (*emptypb.Empty, error)
 	CreateWantedBandit(context.Context, *CreateWantedBanditRequest) (*emptypb.Empty, error)
 	GetWantedRegistry(context.Context, *emptypb.Empty) (*GetWantedRegistryResponse, error)
@@ -244,9 +246,6 @@ func (UnimplementedRuleAdminServiceServer) GetVariantData(context.Context, *GetV
 }
 func (UnimplementedRuleAdminServiceServer) AddVariant(context.Context, *AddVariantRequest) (*VariantResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AddVariant not implemented")
-}
-func (UnimplementedRuleAdminServiceServer) RemoveVariant(context.Context, *GetVariantRequest) (*emptypb.Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method RemoveVariant not implemented")
 }
 func (UnimplementedRuleAdminServiceServer) SetVariantState(context.Context, *SetVariantStateRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SetVariantState not implemented")
@@ -450,24 +449,6 @@ func _RuleAdminService_AddVariant_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RuleAdminService_RemoveVariant_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetVariantRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(RuleAdminServiceServer).RemoveVariant(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: RuleAdminService_RemoveVariant_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RuleAdminServiceServer).RemoveVariant(ctx, req.(*GetVariantRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _RuleAdminService_SetVariantState_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(SetVariantStateRequest)
 	if err := dec(in); err != nil {
@@ -568,10 +549,6 @@ var RuleAdminService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "AddVariant",
 			Handler:    _RuleAdminService_AddVariant_Handler,
-		},
-		{
-			MethodName: "RemoveVariant",
-			Handler:    _RuleAdminService_RemoveVariant_Handler,
 		},
 		{
 			MethodName: "SetVariantState",
