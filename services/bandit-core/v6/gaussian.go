@@ -61,7 +61,7 @@ func NewDefaultGaussianArm() *GaussianArm {
 	}
 }
 
-func (gb *GaussianBandit) Calculate(params *GaussianArm, reward float64) *GaussianArm {
+func (gb *GaussianBandit) Calculate(params *GaussianArm, reward float64, count uint64) *GaussianArm {
 	newParams := *params
 
 	if gb.Version < params.Version {
@@ -74,7 +74,7 @@ func (gb *GaussianBandit) Calculate(params *GaussianArm, reward float64) *Gaussi
 	decayedReward := reward * decayWeight
 
 	oldCount := params.Count
-	newCount := oldCount + 1
+	newCount := oldCount + count
 	newParams.Count = newCount
 	newParams.Mu = (float64(oldCount)*params.Mu + decayedReward) / float64(newCount)
 

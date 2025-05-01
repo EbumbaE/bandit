@@ -119,7 +119,7 @@ func (s *Storage) InsertHistoryBatch(ctx context.Context, batch []model.HistoryE
 					event.Payload.RuleID,
 					event.Payload.VariantID,
 					event.Payload.RuleVersion,
-					event.Action,
+					event.Action.String(),
 					event.Amount,
 					nil, nil,
 				)

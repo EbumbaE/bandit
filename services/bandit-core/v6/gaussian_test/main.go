@@ -76,7 +76,7 @@ func main() {
 			oldParams.Version--
 		}
 
-		newParams := gb.Calculate(oldParams, reward)
+		newParams := gb.Calculate(oldParams, reward, 1)
 
 		memoryStorage.Save("rule1", selectedArmID, newParams)
 

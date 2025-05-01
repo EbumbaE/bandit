@@ -74,6 +74,7 @@ func (c *Consumer) Handle(ctx context.Context, msg []byte) error {
 		RuleID:      toHistory.Payload.RuleID,
 		VariantID:   toHistory.Payload.VariantID,
 		Reward:      reward,
+		Count:       1, // TODO суммировать на уровне базы
 		RuleVersion: toHistory.Payload.RuleVersion,
 	}
 
