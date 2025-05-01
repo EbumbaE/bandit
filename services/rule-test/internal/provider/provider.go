@@ -16,9 +16,9 @@ import (
 )
 
 const (
-	service     = "rule-test"
-	ruleContext = "efficiency_test"
+	service = "rule-test"
 
+	ruleContextFormat     = "load_test_%d"
 	loadRuleContextFormat = "load_test_%d"
 )
 
@@ -73,7 +73,7 @@ func (p *Provider) DoLoadTest(ctx context.Context, parallelCount, cycleAmount in
 				return errors.Wrap(err, "create rule")
 			}
 
-			if err := p.doCycle(gCtx, ruleContext, cycleAmount); err != nil {
+			if err := p.doCycle(gCtx, localCtx, cycleAmount); err != nil {
 				return errors.Wrap(err, "doCycle")
 			}
 
@@ -89,12 +89,16 @@ func (p *Provider) DoEfficiencyTest(ctx context.Context, cycleAmount int) error 
 		return errors.Wrap(err, "create bandit")
 	}
 
-	ruleID, err := p.admin.CreateRule(ctx, service, ruleContext)
+	localCtx := fmt.Sprintf(loadRuleContextFormat, rand.Intn(1_000_000_000))
+
+	ruleID, err := p.admin.CreateRule(ctx, service, localCtx)
 	if err != nil {
 		return errors.Wrap(err, "create rule")
 	}
 
-	if err := p.doCycle(ctx, ruleContext, cycleAmount); err != nil {
+	time.Sleep(1000 * time.Microsecond)
+
+	if err := p.doCycle(ctx, localCtx, cycleAmount); err != nil {
 		return errors.Wrap(err, "1 doCycle")
 	}
 
@@ -103,7 +107,9 @@ func (p *Provider) DoEfficiencyTest(ctx context.Context, cycleAmount int) error 
 		return errors.Wrap(err, "create rule")
 	}
 
-	if err := p.doCycle(ctx, ruleContext, cycleAmount); err != nil {
+	time.Sleep(1000 * time.Microsecond)
+
+	if err := p.doCycle(ctx, localCtx, cycleAmount); err != nil {
 		return errors.Wrap(err, "2 doCycle")
 	}
 
@@ -111,7 +117,9 @@ func (p *Provider) DoEfficiencyTest(ctx context.Context, cycleAmount int) error 
 		return errors.Wrap(err, "create rule")
 	}
 
-	if err := p.doCycle(ctx, ruleContext, cycleAmount); err != nil {
+	time.Sleep(1000 * time.Microsecond)
+
+	if err := p.doCycle(ctx, localCtx, cycleAmount); err != nil {
 		return errors.Wrap(err, "3 doCycle")
 	}
 

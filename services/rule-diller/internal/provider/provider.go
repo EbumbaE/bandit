@@ -12,10 +12,13 @@ import (
 	model "github.com/EbumbaE/bandit/services/rule-diller/internal"
 )
 
+var ErrEmptyAnswer = errors.New("empty variants len")
+
 type Storage interface {
 	GetRuleVariants(ctx context.Context, service, context string, withData bool) ([]model.Variant, error)
 	GetRuleVersion(ctx context.Context, service, context string) (uint64, error)
 	GetVariantData(ctx context.Context, service, context, variantID string) (string, error)
+	GetVariantRule(ctx context.Context, service, context, variantID string) (string, error)
 
 	IncVariantCount(ctx context.Context, service, context, variantID string) error
 }
@@ -37,7 +40,7 @@ func (p *Provider) GetRuleData(ctx context.Context, service, ctxKey string) (str
 	}
 
 	if len(variants) == 0 {
-		return "", "", errors.New("empty variants len")
+		return "", "", ErrEmptyAnswer
 	}
 
 	options := convertToProperties(variants)
@@ -57,11 +60,16 @@ func (p *Provider) GetRuleData(ctx context.Context, service, ctxKey string) (str
 		return "", "", errors.Wrapf(err, "GetVariantData for variant[%s]", selectedKey)
 	}
 
+	ruleID, err := p.storage.GetVariantRule(ctx, service, ctxKey, selectedKey)
+	if err != nil {
+		return "", "", errors.Wrapf(err, "GetVariantRule for variant[%s]", selectedKey)
+	}
+
 	payload, err := json.Marshal(model.PayloadAnalitic{
 		Service:     service,
 		Context:     ctxKey,
 		VariantID:   selectedKey,
-		RuleID:      "", // TODO
+		RuleID:      ruleID,
 		RuleVersion: version,
 	})
 	if err != nil {

@@ -121,6 +121,7 @@ func (s *Storage) InsertHistoryBatch(ctx context.Context, batch []model.HistoryE
 					event.Payload.RuleVersion,
 					event.Action,
 					event.Amount,
+					nil, nil,
 				)
 				if err != nil {
 					return err

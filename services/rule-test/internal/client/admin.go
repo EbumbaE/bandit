@@ -36,6 +36,7 @@ func (w *RuleAdminWrapper) CreateRule(ctx context.Context, service, context stri
 		Service:     service,
 		Context:     context,
 		BanditKey:   "gaussian",
+		State:       pb.State_STATE_ENABLED,
 		Variants: []*pb.Variant{
 			{
 				Name:  "arm1",

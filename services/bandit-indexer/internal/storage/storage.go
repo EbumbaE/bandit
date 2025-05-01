@@ -124,7 +124,7 @@ func (s *Storage) UpBanditVersion(ctx context.Context, ruleID string) error {
 	query := `
 		UPDATE bandit_info 
 		SET 
-			config = config + 1,
+			version = version + 1,
 			updated_at = NOW() at time zone 'utc' 
 		WHERE rule_id = $1;
 `

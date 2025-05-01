@@ -124,7 +124,8 @@ message CreateRuleRequest {
   string service = 3;
   string context = 4;
   string bandit_key = 5;
-  repeated Variant variants = 6;
+  State state = 6;
+  repeated Variant variants = 7;
 }
 
 message SetRuleStateRequest {

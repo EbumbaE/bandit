@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"errors"
 
 	"github.com/opentracing/opentracing-go"
 	"google.golang.org/grpc/codes"
@@ -9,6 +10,7 @@ import (
 
 	desc "github.com/EbumbaE/bandit/pkg/genproto/rule-diller/api"
 	model "github.com/EbumbaE/bandit/services/rule-diller/internal"
+	"github.com/EbumbaE/bandit/services/rule-diller/internal/provider"
 )
 
 type DillerProvider interface {
@@ -38,6 +40,9 @@ func (i *Implementation) GetRuleData(ctx context.Context, req *desc.GetRuleReque
 
 	ruleData, payload, err := i.dillerProvider.GetRuleData(ctx, req.GetService(), req.GetContext())
 	if err != nil {
+		if errors.Is(err, provider.ErrEmptyAnswer) {
+			return nil, status.Error(codes.FailedPrecondition, err.Error())
+		}
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 

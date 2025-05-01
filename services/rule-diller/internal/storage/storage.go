@@ -168,6 +168,10 @@ func (s *Storage) GetVariantData(ctx context.Context, service, context, variantI
 	return s.conn.HGet(ctx, keyVariantData(service, context, variantID), "data").Result()
 }
 
+func (s *Storage) GetVariantRule(ctx context.Context, service, context, variantID string) (string, error) {
+	return s.conn.HGet(ctx, keyVariantData(service, context, variantID), "rule_id").Result()
+}
+
 func (s *Storage) GetVariantCount(ctx context.Context, service, context, variantID string) (uint64, error) {
 	count, err := s.conn.HGet(ctx, keyVariantData(service, context, variantID), "count").Uint64()
 	if err != nil {

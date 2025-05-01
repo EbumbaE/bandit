@@ -9,9 +9,9 @@ type PayloadAnalitic struct {
 }
 
 type HistoryEvent struct {
-	Payload PayloadAnalitic `json:"payload"`
-	Action  ActionType      `json:"action"`
-	Amount  float64         `json:"amount"`
+	Payload PayloadAnalitic
+	Action  ActionType
+	Amount  float64
 }
 
 type BanditEvent struct {

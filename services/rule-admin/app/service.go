@@ -295,6 +295,7 @@ func encodeCreateRule(v *desc.CreateRuleRequest) model.Rule {
 		BanditKey:   v.BanditKey,
 		Service:     v.Service,
 		Context:     v.Context,
+		State:       encodeStateType(v.GetState()),
 		Variants:    encodeVariants(v.GetVariants()),
 	}
 }

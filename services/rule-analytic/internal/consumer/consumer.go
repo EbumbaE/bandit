@@ -31,9 +31,27 @@ func NewConsumer(storage Storage, notifier Notifier) *Consumer {
 	}
 }
 
+type Event struct {
+	Payload string           `json:"payload"`
+	Action  model.ActionType `json:"action"`
+	Amount  float64          `json:"amount"`
+}
+
 func (c *Consumer) Handle(ctx context.Context, msg []byte) error {
-	toHistory := &model.HistoryEvent{}
-	if err := json.Unmarshal(msg, toHistory); err != nil {
+	unmarhaled := &Event{}
+	if err := json.Unmarshal(msg, unmarhaled); err != nil {
+		return errors.Wrapf(err, "unmarshal message: %s", string(msg))
+	}
+
+	if unmarhaled.Payload == "" {
+		return nil
+	}
+
+	toHistory := model.HistoryEvent{
+		Action: unmarhaled.Action,
+		Amount: unmarhaled.Amount,
+	}
+	if err := json.Unmarshal([]byte(unmarhaled.Payload), &(toHistory.Payload)); err != nil {
 		return errors.Wrapf(err, "unmarshal message: %s", string(msg))
 	}
 
@@ -69,7 +87,7 @@ func (c *Consumer) Handle(ctx context.Context, msg []byte) error {
 	}
 
 	// TODO нормальная запись батчами
-	if err := c.storage.InsertHistoryBatch(ctx, []model.HistoryEvent{*toHistory}); err != nil {
+	if err := c.storage.InsertHistoryBatch(ctx, []model.HistoryEvent{toHistory}); err != nil {
 		return errors.Wrapf(err, "storage.InsertHistoryBatch [%v]", toSend)
 	}
 
