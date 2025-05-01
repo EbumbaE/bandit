@@ -8,6 +8,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/EbumbaE/bandit/pkg/logger"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	httpSwagger "github.com/swaggo/http-swagger"
 	"go.uber.org/zap"
@@ -15,7 +16,6 @@ import (
 	"google.golang.org/grpc/reflection"
 
 	rulediller "github.com/EbumbaE/bandit/pkg/genproto/rule-diller/api"
-	"github.com/EbumbaE/bandit/pkg/logger"
 )
 
 func InitRuleDillerSwagger(ctx context.Context, wg *sync.WaitGroup, swaggerPath, swaggerAddr, swaggerHost, grpcHost string) {

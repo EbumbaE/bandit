@@ -17,6 +17,7 @@ import (
 
 func Run() {
 	configPath := flag.String("config", "", "config path")
+	swaggerPath := flag.String("swagger", "", "swagger path")
 	flag.Parse()
 
 	config := readConfig(*configPath)
@@ -36,7 +37,7 @@ func Run() {
 
 	defer app.Close(ctx)
 
-	if err := app.Run(ctx); err != nil {
+	if err := app.Run(ctx, *swaggerPath); err != nil {
 		logger.Fatal("can't run app", zap.Error(err))
 	}
 
@@ -58,24 +59,25 @@ func readConfig(configPath string) *Config {
 }
 
 type Config struct {
-	Test    Test             `yaml:"test"`
-	Service RuleAdminService `yaml:"service"`
-	Kafka   Kafka            `yaml:"kafka"`
+	Service    RuleAdminService `yaml:"service"`
+	Kafka      Kafka            `yaml:"kafka"`
+	Prometheus Prometheus       `yaml:"prometheus"`
 }
 
 type RuleAdminService struct {
+	SwaggerAddress    string        `yaml:"swagger_address"`
+	GrpcAddress       string        `yaml:"rule_test_address"`
+	SwaggerHost       string        `yaml:"swagger_host"`
 	RuleDillerAddress string        `yaml:"rule_diller_address"`
 	RuleAdminAddress  string        `yaml:"rule_admin_address"`
 	ConnectionTimeout time.Duration `yaml:"connection_timeout"`
 }
 
-type Test struct {
-	Mode          string `yaml:"mode"`
-	ParallelCount int    `yaml:"parallel_count"`
-	CycleCount    int    `yaml:"cycle_count"`
-}
-
 type Kafka struct {
 	Brokers []string `yaml:"brokers"`
 	Topic   string   `yaml:"topic"`
+}
+
+type Prometheus struct {
+	Host string `yaml:"host"`
 }

@@ -15,10 +15,10 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 
-	banditindexer "github.com/EbumbaE/bandit/pkg/genproto/bandit-indexer/api"
+	ruletest "github.com/EbumbaE/bandit/pkg/genproto/rule-test/api"
 )
 
-func InitBanditIndexerSwagger(ctx context.Context, wg *sync.WaitGroup, swaggerPath, swaggerAddr, swaggerHost, grpcHost string) {
+func StartRuleTestSwagger(ctx context.Context, wg *sync.WaitGroup, swaggerPath, swaggerAddr, swaggerHost, grpcHost string) {
 	httpMux := http.NewServeMux()
 
 	absolutePath, err := filepath.Abs(swaggerPath)
@@ -35,7 +35,7 @@ func InitBanditIndexerSwagger(ctx context.Context, wg *sync.WaitGroup, swaggerPa
 	))
 
 	grpcMux := runtime.NewServeMux()
-	if err := banditindexer.RegisterBanditIndexerServiceHandlerFromEndpoint(ctx, grpcMux, grpcHost, []grpc.DialOption{grpc.WithInsecure()}); err != nil {
+	if err := ruletest.RegisterRuleTestServiceHandlerFromEndpoint(ctx, grpcMux, grpcHost, []grpc.DialOption{grpc.WithInsecure()}); err != nil {
 		logger.Error("failed to register gateway handler", zap.Error(err))
 	}
 
@@ -54,32 +54,32 @@ func InitBanditIndexerSwagger(ctx context.Context, wg *sync.WaitGroup, swaggerPa
 			}),
 		}
 
-		logger.Info("swagger for bandit-indexer start")
+		logger.Info("swagger for rule-test start")
 		go func() {
 			if err := srv.ListenAndServe(); err != nil {
-				logger.Error("swagger for bandit-indexer", zap.Error(err))
+				logger.Error("swagger for rule-test", zap.Error(err))
 			}
 		}()
 
 		<-ctx.Done()
 		_ = srv.Shutdown(ctx)
 
-		logger.Info("swagger for bandit-indexer stop")
+		logger.Info("swagger for rule-test stop")
 	}()
 }
 
-func StarBanditIndexer(ctx context.Context, serv banditindexer.BanditIndexerServiceServer, wg *sync.WaitGroup, host string) {
+func StartRuleTest(ctx context.Context, serv ruletest.RuleTestServiceServer, wg *sync.WaitGroup, host string) {
 	listener, err := net.Listen("tcp", host)
 	if err != nil {
 		logger.Error("failed to listen in sender server", zap.Error(err))
 	}
 	server := grpc.NewServer()
-	banditindexer.RegisterBanditIndexerServiceServer(server, serv)
+	ruletest.RegisterRuleTestServiceServer(server, serv)
 	reflection.Register(server)
 
 	wg.Add(1)
 	go func() {
-		logger.Info("bandit-indexer start")
+		logger.Info("rule-test start")
 		defer wg.Done()
 
 		go func() {

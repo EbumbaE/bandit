@@ -1,0 +1,136 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "rule-test/api/test.proto",
+    "version": "version not set"
+  },
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/v1/test/efficiency": {
+      "put": {
+        "operationId": "RuleTestService_DoEfficiencyTest",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ruletestEfficiencyTestRequest"
+            }
+          }
+        ],
+        "tags": [
+          "RuleTestService"
+        ]
+      }
+    },
+    "/v1/test/load": {
+      "put": {
+        "operationId": "RuleTestService_DoLoadTest",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ruletestLoadTestRequest"
+            }
+          }
+        ],
+        "tags": [
+          "RuleTestService"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "type_url": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string",
+          "format": "byte"
+        }
+      }
+    },
+    "ruletestEfficiencyTestRequest": {
+      "type": "object",
+      "properties": {
+        "cycle_amount": {
+          "type": "string",
+          "format": "uint64"
+        }
+      }
+    },
+    "ruletestLoadTestRequest": {
+      "type": "object",
+      "properties": {
+        "parallel_count": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "cycle_amount": {
+          "type": "string",
+          "format": "uint64"
+        }
+      }
+    },
+    "runtimeError": {
+      "type": "object",
+      "properties": {
+        "error": {
+          "type": "string"
+        },
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
+    }
+  }
+}

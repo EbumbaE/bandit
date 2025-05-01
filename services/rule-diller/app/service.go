@@ -48,7 +48,7 @@ func (i *Implementation) GetRuleData(ctx context.Context, req *desc.GetRuleReque
 }
 
 func (i *Implementation) GetRuleStatistic(ctx context.Context, req *desc.GetRuleRequest) (*desc.GetRuleStatisticResponse, error) {
-	span, ctx := opentracing.StartSpanFromContext(ctx, "api/GetRule")
+	span, ctx := opentracing.StartSpanFromContext(ctx, "api/GetRuleStatistic")
 	defer span.Finish()
 
 	if len(req.GetService()) == 0 || len(req.GetContext()) == 0 {

@@ -129,12 +129,20 @@ func (p *Provider) doCycle(ctx context.Context, localCtx string, n int) error {
 
 		metrics.SummaryResponceTime.Observe(float64(time.Since(startTime).Milliseconds()))
 
-		if err := p.notifier.SendAnalytic(ctx, notifier.ViewActionType, 1, payload); err != nil {
-			return errors.Wrap(err, "send analytic")
+		if err := p.doAnalytic(ctx, payload); err != nil {
+			return errors.Wrap(err, "doAnalytic")
 		}
 
 		metrics.DataCounter.WithLabelValues(string(data)).Inc()
 		logger.Info("[DoEfficiencyTest] data", zap.String("data", string(data)))
+	}
+
+	return nil
+}
+
+func (p *Provider) doAnalytic(ctx context.Context, payload string) error {
+	if err := p.notifier.SendAnalytic(ctx, notifier.ViewActionType, 1, payload); err != nil {
+		return errors.Wrap(err, "send analytic")
 	}
 
 	return nil

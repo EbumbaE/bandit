@@ -2,6 +2,7 @@ version: '3'
 
 services:
   rule_admin:
+    container_name: rule-admin
     hostname: rule-admin
     build:
       context: ../.
@@ -25,6 +26,7 @@ services:
       - psql-net
 
   bandit_indexer:
+    container_name: bandit-indexer
     hostname: bandit-indexer
     build:
       context: ../.
@@ -48,6 +50,7 @@ services:
       - psql-net
 
   rule_diller:
+    container_name: rule-diller
     hostname: rule-diller
     build:
       context: ../.
@@ -70,8 +73,60 @@ services:
       - kafka-net
       - redis-net
 
+  rule_analytic:
+    container_name: rule-analytic
+    hostname: rule-analytic
+    build:
+      context: ../.
+      dockerfile: ./infra/rule_analytic.Dockerfile
+    ports:
+      - "8440:8440"
+    depends_on:
+      clickhouse_db:
+        condition: service_healthy
+      rule_analytic_db:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    restart: on-failure
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8440/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+    networks:
+      - kafka-net
+      - cl-net
+      - psql-net
+
+  rule_test:
+    container_name: rule-test
+    hostname: rule-test
+    build:
+      context: ../.
+      dockerfile: ./infra/rule_test.Dockerfile
+    ports:
+      - "8441:8441"
+      - "8442:8442"
+      - "8443:8443"
+    depends_on:
+      kafka:
+        condition: service_healthy
+      prometheus:
+        condition: service_healthy
+    restart: on-failure
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8441/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+    networks:
+      - kafka-net
+      - monitoring-net
+
   rule_admin_db:
     image: postgres:13
+    container_name: rule-admin-db
     hostname: rule-admin-db
     ports:
     - "5432:5432"
@@ -89,6 +144,7 @@ services:
 
   bandit_indexer_db:
     image: postgres:13
+    container_name: bandit-indexer-db
     hostname: bandit-indexer-db
     ports:
     - "5433:5432"
@@ -106,6 +162,7 @@ services:
 
   rule_analytic_db:
     image: postgres:13
+    container_name: rule-analytic-db
     hostname: rule-analytic-db
     ports:
     - "5434:5432"
@@ -121,8 +178,33 @@ services:
     networks:
       - psql-net
 
+  clickhouse_db:
+    image: clickhouse/clickhouse-server:latest
+    container_name: clickhouse-db
+    hostname: clickhouse-db
+    ports:
+      - "8123:8123"
+      - "9000:9000"
+      - "9009:9009"
+    environment:
+      CLICKHOUSE_DB: rule_analytic_db
+      CLICKHOUSE_USER: rule_analytic_user
+      CLICKHOUSE_PASSWORD: rule-analytic-password
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
+    healthcheck:
+      test: ["CMD", "clickhouse-client", "--query", "SELECT 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - cl-net
+
   zookeeper:
     image: zookeeper:3.8
+    container_name: zookeeper
     hostname: zookeeper
     ports:
       - "2181:2181"
@@ -139,6 +221,7 @@ services:
 
   kafka:
     image: bitnami/kafka:3.6
+    container_name: kafka
     hostname: kafka
     ports:
       - "9092:9092"
@@ -167,6 +250,7 @@ services:
 
   redis:
     image: 'bitnami/redis:latest'
+    container_name: redis
     environment:
       - ALLOW_EMPTY_PASSWORD=yes
     networks:
@@ -179,10 +263,65 @@ services:
       timeout: 5s
       retries: 5
 
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    hostname: prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    ports:
+      - "9090:9090"
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "http://localhost:9090/-/healthy"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    restart: unless-stopped
+    networks:
+      - monitoring-net
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    ports:
+      - "3000:3000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    depends_on:
+      prometheus:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - monitoring-net
+
+volumes:
+  prometheus_data:
+  grafana_data:
+
 networks:
   kafka-net:
     driver: bridge
   redis-net:
     driver: bridge
   psql-net:
+    driver: bridge
+  cl-net:
+    driver: bridge
+  monitoring-net:
     driver: bridge

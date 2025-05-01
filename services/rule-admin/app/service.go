@@ -127,7 +127,7 @@ func (i *Implementation) GetVariant(ctx context.Context, req *desc.GetVariantReq
 }
 
 func (i *Implementation) GetVariantData(ctx context.Context, req *desc.GetVariantRequest) (*desc.VariantResponse, error) {
-	span, ctx := opentracing.StartSpanFromContext(ctx, "api/GetVariant")
+	span, ctx := opentracing.StartSpanFromContext(ctx, "api/GetVariantData")
 	defer span.Finish()
 
 	if len(req.GetId()) == 0 || len(req.GetRuleId()) == 0 {
@@ -262,7 +262,7 @@ func (i *Implementation) CheckRule(ctx context.Context, req *desc.CheckRequest) 
 }
 
 func (i *Implementation) CheckVariant(ctx context.Context, req *desc.CheckRequest) (*desc.CheckResponse, error) {
-	span, ctx := opentracing.StartSpanFromContext(ctx, "api/CheckRule")
+	span, ctx := opentracing.StartSpanFromContext(ctx, "api/CheckVariant")
 	defer span.Finish()
 
 	if len(req.GetId()) == 0 || len(req.GetVariantId()) == 0 {

@@ -11,13 +11,23 @@ import (
 
 var server *http.Server
 
-func InitMetricsServer(ctx context.Context) {
+func StartMetricsServer(ctx context.Context, host string) {
 	mux := http.NewServeMux()
-	mux.Handle("rule-test/metrics", promhttp.Handler())
 
-	server = &http.Server{Addr: ":8080", Handler: mux}
+	mux.Handle("/metrics", promhttp.Handler())
+
+	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("OK"))
+	})
+
+	server = &http.Server{
+		Addr:    host,
+		Handler: mux,
+	}
+
 	go func() {
-		logger.Info("metrics server begin")
+		logger.Info("Starting metrics server", zap.String("address", server.Addr))
 
 		go func() {
 			if err := server.ListenAndServe(); err != nil {

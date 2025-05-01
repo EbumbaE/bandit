@@ -68,7 +68,7 @@ func initClickSchema(ctx context.Context, db clickhouse.Database) error {
 			created_at    DateTime DEFAULT now(),
 			updated_at    DateTime DEFAULT now()
 		) ENGINE = MergeTree()
-		ORDER BY (rule_id, variant_id, event_time);
+		ORDER BY (created_at, rule_id, variant_id);
 	`
 
 	_, err := db.Exec(ctx, query)

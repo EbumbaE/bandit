@@ -1,4 +1,4 @@
-proto = services/rule-admin/api services/bandit-indexer/api services/rule-diller/api 
+proto = services/rule-admin/api services/bandit-indexer/api services/rule-diller/api services/rule-test/api 
 
 .PHONY: generate, $(proto)
 
