@@ -27,7 +27,7 @@ func (i *AdminWrapper) GetRuleServiceContext(ctx context.Context, ruleID string)
 	return resp.GetService(), resp.GetContext(), err
 }
 
-func (i *AdminWrapper) GetVariantData(ctx context.Context, ruleID string, variantID string) ([]byte, error) {
+func (i *AdminWrapper) GetVariantData(ctx context.Context, ruleID string, variantID string) (string, error) {
 	resp, err := i.client.GetVariantData(ctx, &pb.GetVariantRequest{Id: variantID, RuleId: ruleID})
 	return resp.GetVariant().GetData(), err
 }

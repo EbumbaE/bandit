@@ -35,16 +35,17 @@ func (w *RuleAdminWrapper) CreateRule(ctx context.Context, service, context stri
 		Description: "for test",
 		Service:     service,
 		Context:     context,
+		BanditKey:   "gaussian",
 		Variants: []*pb.Variant{
 			{
 				Name:  "arm1",
-				Data:  []byte("1, 2, 3"),
-				State: pb.State_RULE_STATE_ENABLED,
+				Data:  `{"Value": [1, 2, 3]}`,
+				State: pb.State_STATE_ENABLED,
 			},
 			{
 				Name:  "arm2",
-				Data:  []byte("4, 5, 6"),
-				State: pb.State_RULE_STATE_ENABLED,
+				Data:  `{"Value": [4, 5, 6]}`,
+				State: pb.State_STATE_ENABLED,
 			},
 		},
 	})
@@ -57,8 +58,8 @@ func (w *RuleAdminWrapper) AddVariant(ctx context.Context, ruleID string) (strin
 		RuleId: ruleID,
 		Variant: &pb.Variant{
 			Name:  "arm3",
-			Data:  []byte("7, 8, 9"),
-			State: pb.State_RULE_STATE_ENABLED,
+			Data:  `{"Value": [7, 8, 9]}`,
+			State: pb.State_STATE_ENABLED,
 		},
 	})
 	return resp.GetVariant().GetId(), err
@@ -68,7 +69,7 @@ func (w *RuleAdminWrapper) DisableVariant(ctx context.Context, ruleID, variantID
 	_, err := w.cl.SetVariantState(ctx, &pb.SetVariantStateRequest{
 		Id:     variantID,
 		RuleId: ruleID,
-		State:  pb.State_RULE_STATE_DISABLED,
+		State:  pb.State_STATE_DISABLED,
 	})
 	return err
 }

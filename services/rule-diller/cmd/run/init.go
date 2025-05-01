@@ -75,7 +75,7 @@ func (a *application) initClients(ctx context.Context) {
 
 	a.clients.indexerWrapper = client_wrapper.NewIndexerWrapper(bandit_indexer_client.NewBanditIndexerServiceClient(conn))
 
-	conn, err = grpc.DialContext(ctx, a.cfg.Service.BanditIndexerAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err = grpc.DialContext(ctx, a.cfg.Service.RuleAdminAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		logger.Fatal("connect to rule-admin", zap.Error(err))
 	}
@@ -120,9 +120,9 @@ func (a *application) initService() {
 	a.service = rule_diller_service.NewService(a.provider)
 }
 
-func (a *application) Run(ctx context.Context) error {
+func (a *application) Run(ctx context.Context, swaggerPath string) error {
 	server.StartRuleDiller(ctx, a.service, a.wg, a.cfg.Service.GrpcAddress)
-	server.InitRuleDillerSwagger(ctx, a.wg, a.cfg.Service.SwaggerAddress, a.cfg.Service.SwaggerHost, a.cfg.Service.GrpcAddress)
+	server.InitRuleDillerSwagger(ctx, a.wg, swaggerPath, a.cfg.Service.SwaggerAddress, a.cfg.Service.SwaggerHost, a.cfg.Service.GrpcAddress)
 
 	return nil
 }

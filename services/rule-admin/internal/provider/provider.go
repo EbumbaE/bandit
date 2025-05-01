@@ -2,14 +2,16 @@ package provider
 
 import (
 	"context"
-	"errors"
+	"fmt"
 
 	"github.com/opentracing/opentracing-go"
+	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
 	"github.com/EbumbaE/bandit/pkg/logger"
 	model "github.com/EbumbaE/bandit/services/rule-admin/internal"
 	"github.com/EbumbaE/bandit/services/rule-admin/internal/notifier"
+	"github.com/EbumbaE/bandit/services/rule-admin/internal/storage"
 )
 
 var ErrNotFound = errors.New("not found")
@@ -20,6 +22,7 @@ type Storage interface {
 	UpdateRule(ctx context.Context, rule model.Rule) (model.Rule, error)
 	SetRuleState(ctx context.Context, id string, state model.StateType) error
 	GetRuleServiceContext(ctx context.Context, ruleID string) (string, string, error)
+	GetActiveRuleByServiceContext(ctx context.Context, service, context string) (string, error)
 
 	GetVariant(ctx context.Context, ruleID, variantID string) (model.Variant, error)
 	GetVariants(ctx context.Context, ruleID string) ([]model.Variant, error)
@@ -52,8 +55,11 @@ func (p *Provider) GetRule(ctx context.Context, id string) (model.Rule, error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "provider/GetRule")
 	defer span.Finish()
 
-	r, err := p.GetRule(ctx, id)
+	r, err := p.storage.GetRule(ctx, id)
 	if err != nil {
+		if errors.Is(err, storage.ErrNotFound) {
+			return model.Rule{}, ErrNotFound
+		}
 		return model.Rule{}, err
 	}
 
@@ -78,20 +84,29 @@ func (p *Provider) CreateRule(ctx context.Context, r model.Rule) (model.Rule, er
 		return model.Rule{}, errors.New("validate bandit key")
 	}
 
+	id, err := p.storage.GetActiveRuleByServiceContext(ctx, r.Service, r.Context)
+	if err != nil && !errors.Is(err, storage.ErrNotFound) {
+		return model.Rule{}, err
+	}
+	if len(id) > 0 {
+		return model.Rule{}, fmt.Errorf("active rule already exist[%s]", id)
+	}
+
+	variants := r.Variants
+	r.Variants = nil
+
 	r, err = p.storage.CreateRule(ctx, r)
 	if err != nil {
 		return model.Rule{}, err
 	}
 
-	var createdVariants []model.Variant
-	for _, v := range r.Variants {
-		v, err = p.AddVariant(ctx, r.Id, v)
+	for _, v := range variants {
+		addedV, err := p.AddVariant(ctx, r.Id, v)
 		if err != nil {
-			return model.Rule{}, err
+			return r, err
 		}
-		createdVariants = append(createdVariants, v)
+		r.Variants = append(r.Variants, addedV)
 	}
-	r.Variants = createdVariants
 
 	if err := p.notifier.SendRule(ctx, r.Id, notifier.ActionCreate); err != nil {
 		logger.Error("failed send create rule event", zap.Error(err))
@@ -140,6 +155,9 @@ func (p *Provider) GetVariant(ctx context.Context, ruleID, variandID string) (mo
 
 	v, err := p.storage.GetVariant(ctx, ruleID, variandID)
 	if err != nil {
+		if errors.Is(err, storage.ErrNotFound) {
+			return model.Variant{}, ErrNotFound
+		}
 		return model.Variant{}, err
 	}
 
@@ -150,7 +168,7 @@ func (p *Provider) AddVariant(ctx context.Context, ruleID string, v model.Varian
 	span, ctx := opentracing.StartSpanFromContext(ctx, "provider/AddVariant")
 	defer span.Finish()
 
-	_, err := p.GetRule(ctx, ruleID)
+	_, err := p.storage.GetRule(ctx, ruleID)
 	if err != nil {
 		return model.Variant{}, err
 	}
@@ -177,11 +195,11 @@ func (p *Provider) SetVariantState(ctx context.Context, ruleID, variantID string
 
 	switch state {
 	case model.StateTypeDisable:
-		if err := p.notifier.SendVariant(ctx, ruleID, variantID, notifier.ActionCreate); err != nil {
+		if err := p.notifier.SendVariant(ctx, ruleID, variantID, notifier.ActionInactive); err != nil {
 			logger.Error("failed send inactive variant event", zap.Error(err))
 		}
 	case model.StateTypeEnable:
-		if err := p.notifier.SendVariant(ctx, ruleID, variantID, notifier.ActionCreate); err != nil {
+		if err := p.notifier.SendVariant(ctx, ruleID, variantID, notifier.ActionActive); err != nil {
 			logger.Error("failed send active variant event", zap.Error(err))
 		}
 	}

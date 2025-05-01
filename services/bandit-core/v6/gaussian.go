@@ -31,12 +31,12 @@ type GaussianArm struct {
 }
 
 type GaussianBandit struct {
-	BaseSigma         float64
-	MinSigma          float64
-	MinAlpha          float64
-	DecayFactor       float64
-	SigmaSmoothFactor float64
-	Version           uint64
+	BaseSigma         float64 `json:"base_sigma"`
+	MinSigma          float64 `json:"min_sigma"`
+	MinAlpha          float64 `json:"min_alpha"`
+	DecayFactor       float64 `json:"decay_factor"`
+	SigmaSmoothFactor float64 `json:"sigma_smooth_factor"`
+	Version           uint64  `json:"version"`
 }
 
 func NewDefaultGaussianBandit() *GaussianBandit {

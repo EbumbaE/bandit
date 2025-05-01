@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+package bandit.services.ruletest;
+
+option go_package = "./ruletest";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+import "google/api/annotations.proto";
+
+service RuleTestService {
+  rpc DoLoadTest(LoadTestRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      put: "/v1/test/load"
+      body: "*"
+    };
+  };
+  rpc DoEfficiencyTest(EfficiencyTestRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      put: "/v1/test/efficiency"
+      body: "*"
+    };
+  };
+}
+
+message LoadTestRequest {
+  uint64 parallel_count = 1;
+  uint64 cycle_amount = 2;
+}
+
+message EfficiencyTestRequest {
+  uint64 cycle_amount = 1;
+}

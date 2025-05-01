@@ -22,7 +22,7 @@ func NewRuleDillerWrapper(cl DillerClient) *RuleDillerWrapper {
 	}
 }
 
-func (w *RuleDillerWrapper) GetRuleData(ctx context.Context, service, context string) ([]byte, []byte, error) {
+func (w *RuleDillerWrapper) GetRuleData(ctx context.Context, service, context string) (string, string, error) {
 	resp, err := w.cl.GetRuleData(ctx, &pb.GetRuleRequest{Service: service, Context: context})
 	return resp.GetData(), resp.GetPayload(), err
 }

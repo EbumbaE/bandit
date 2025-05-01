@@ -69,7 +69,7 @@ func (a *application) initConnections(ctx context.Context) {
 		logger.Error("init connect to psql database", zap.Error(err))
 	}
 
-	a.connections.clickDB, err = clickhouse.NewDatabase(ctx, a.cfg.Postgres.Dsn)
+	a.connections.clickDB, err = clickhouse.NewDatabase(ctx, a.cfg.ClickHouse.Dsn)
 	if err != nil {
 		logger.Error("init connect to click database", zap.Error(err))
 	}
@@ -88,7 +88,7 @@ func (a *application) initProducers(ctx context.Context) {
 func (a *application) initRepos(ctx context.Context) {
 	ruleAnalytic, err := storage.New(ctx, a.connections.psqlDB, a.connections.clickDB)
 	if err != nil {
-		logger.Fatal("init rule-analytic producer", zap.Error(err))
+		logger.Fatal("init rule-analytic repos", zap.Error(err))
 	}
 
 	a.repositories = repositories{

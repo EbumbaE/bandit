@@ -34,11 +34,11 @@ type Analitic struct {
 	Amount  float64    `json:"amount"`
 }
 
-func (n *Notifier) SendAnalytic(ctx context.Context, action ActionType, amount float64, payload []byte) error {
+func (n *Notifier) SendAnalytic(ctx context.Context, action ActionType, amount float64, payload string) error {
 	event := &Analitic{
 		Action:  action,
 		Amount:  amount,
-		Payload: string(payload),
+		Payload: payload,
 	}
 
 	msg, err := json.Marshal(event)

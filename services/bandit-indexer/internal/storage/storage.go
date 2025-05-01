@@ -29,10 +29,10 @@ func initSchema(ctx context.Context, db psql.Database) error {
 	query := `
 		CREATE TABLE IF NOT EXISTS bandit_info (
 			rule_id UUID NOT NULL PRIMARY KEY,
-			version BIGINT NOT NULL,
+			version BIGINT NOT NULL DEFAULT 0,
 			
 			bandit_key TEXT NOT NULL,
-			config JSONB NOT NULL,
+			config JSONB NOT NULL DEFAULT '{}',
 			state TEXT NOT NULL,
 			
 			created_at TIMESTAMP NOT NULL DEFAULT now(),
@@ -41,15 +41,16 @@ func initSchema(ctx context.Context, db psql.Database) error {
 		);
 			
 		CREATE TABLE IF NOT EXISTS arm_info (
-			variant_id UUID  NOT NULL PRIMARY KEY,
+			variant_id UUID NOT NULL PRIMARY KEY,
 			rule_id TEXT NOT NULL,
 
-			count BIGINT NOT NULL,
+			count BIGINT NOT NULL DEFAULT 0,
 			
-			config JSONB,
+			config JSONB NOT NULL DEFAULT '{}',
 			state TEXT NOT NULL,
 			
 			created_at TIMESTAMP NOT NULL DEFAULT now(),
+			updated_at TIMESTAMP NOT NULL DEFAULT now(),
 			deleted_at TIMESTAMP
 		);
 		
@@ -66,17 +67,15 @@ func (s *Storage) GetBanditByRuleID(ctx context.Context, ruleID string) (model.B
 	query := `
 		SELECT rule_id, version, bandit_key, config, state
 		FROM bandit_info
-		WHERE rule_id = $1 AND deleted_at is NULL AND state = 'enabled';
+		WHERE rule_id = $1 AND deleted_at is NULL AND state = $2;
 		`
 
-	err := s.conn.GetSingle(ctx, &r, query, ruleID)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return model.Bandit{}, ErrNotFound
-		}
+	err := s.conn.GetSingle(ctx, &r, query, ruleID, model.StateTypeEnable)
+	if len(r.RuleId) == 0 || errors.Is(err, pgx.ErrNoRows) {
+		return model.Bandit{}, ErrNotFound
 	}
 
-	return r, nil
+	return r, err
 }
 
 func (s *Storage) CreateBandit(ctx context.Context, bandit model.Bandit) (model.Bandit, error) {
@@ -111,7 +110,7 @@ func (s *Storage) SetBanditState(ctx context.Context, ruleID string, state model
 	query := `
 		UPDATE bandit_info 
 		SET 
-			state = $2
+			state = $2,
 			updated_at = NOW() at time zone 'utc' 
 		WHERE rule_id = $1;
 `
@@ -125,7 +124,7 @@ func (s *Storage) UpBanditVersion(ctx context.Context, ruleID string) error {
 	query := `
 		UPDATE bandit_info 
 		SET 
-			config = config + 1
+			config = config + 1,
 			updated_at = NOW() at time zone 'utc' 
 		WHERE rule_id = $1;
 `
@@ -159,13 +158,11 @@ func (s *Storage) GetArms(ctx context.Context, ruleID string) ([]model.Arm, erro
 `
 
 	err := s.conn.GetSlice(ctx, &v, query, ruleID)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, ErrNotFound
-		}
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, ErrNotFound
 	}
 
-	return v, nil
+	return v, err
 }
 
 func (s *Storage) GetArm(ctx context.Context, variantID string) (model.Arm, error) {
@@ -178,25 +175,23 @@ func (s *Storage) GetArm(ctx context.Context, variantID string) (model.Arm, erro
 `
 
 	err := s.conn.GetSingle(ctx, &v, query, variantID)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return model.Arm{}, ErrNotFound
-		}
+	if len(v.VariantId) == 0 || errors.Is(err, pgx.ErrNoRows) {
+		return model.Arm{}, ErrNotFound
 	}
 
-	return v, nil
+	return v, err
 }
 
 func (s *Storage) AddArm(ctx context.Context, ruleID string, v model.Arm) (model.Arm, error) {
 	query := `
 		INSERT INTO arm_info
 		(
-			created_at,
+			created_at, updated_at,
 			rule_id, variant_id, config, state
 		)
 		VALUES
 		(
-			NOW() at time zone 'utc', 
+			NOW() at time zone 'utc', NOW() at time zone 'utc',
 			$1, $2, $3, $4
 		)
 		RETURNING variant_id;
@@ -219,7 +214,7 @@ func (s *Storage) SetArmConfig(ctx context.Context, variantID string, config []b
 	query := `
 		UPDATE arm_info 
 		SET 
-			config = $2
+			config = $2,
 			updated_at = NOW() at time zone 'utc' 
 		WHERE variant_id = $1;
 `
@@ -233,7 +228,7 @@ func (s *Storage) SetArmState(ctx context.Context, variantID string, state model
 	query := `
 		UPDATE arm_info 
 		SET 
-			state = $2
+			state = $2,
 			updated_at = NOW() at time zone 'utc' 
 		WHERE variant_id = $1;
 `

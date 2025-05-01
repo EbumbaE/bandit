@@ -2,7 +2,7 @@ package internal
 
 type Variant struct {
 	Key    string
-	Data   []byte
+	Data   string
 	Score  float64
 	Count  uint64
 	RuleID string

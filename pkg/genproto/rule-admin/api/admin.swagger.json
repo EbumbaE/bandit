@@ -149,7 +149,7 @@
     },
     "/v1/admin/rule/{id}/check": {
       "get": {
-        "operationId": "RuleAdminService_ChechRule",
+        "operationId": "RuleAdminService_CheckRule",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -247,6 +247,7 @@
     },
     "/v1/admin/variant/state/{id}": {
       "put": {
+        "summary": "TODO\nrpc RemoveVariant(GetVariantRequest) returns (google.protobuf.Empty) {\n  option (google.api.http) = {\n    delete: \"/v1/admin/variant/{id}\"\n  };\n};",
         "operationId": "RuleAdminService_SetVariantState",
         "responses": {
           "200": {
@@ -291,40 +292,6 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/ruleadminVariantResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "rule_id",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          }
-        ],
-        "tags": [
-          "RuleAdminService"
-        ]
-      },
-      "delete": {
-        "operationId": "RuleAdminService_RemoveVariant",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "properties": {}
             }
           },
           "default": {
@@ -525,6 +492,9 @@
         "context": {
           "type": "string"
         },
+        "bandit_key": {
+          "type": "string"
+        },
         "variants": {
           "type": "array",
           "items": {
@@ -645,11 +615,11 @@
     "ruleadminState": {
       "type": "string",
       "enum": [
-        "RULE_STATE_UNSPECIFIED",
-        "RULE_STATE_ENABLED",
-        "RULE_STATE_DISABLED"
+        "STATE_UNSPECIFIED",
+        "STATE_ENABLED",
+        "STATE_DISABLED"
       ],
-      "default": "RULE_STATE_UNSPECIFIED"
+      "default": "STATE_UNSPECIFIED"
     },
     "ruleadminVariant": {
       "type": "object",
@@ -661,8 +631,7 @@
           "type": "string"
         },
         "data": {
-          "type": "string",
-          "format": "byte"
+          "type": "string"
         },
         "state": {
           "$ref": "#/definitions/ruleadminState"

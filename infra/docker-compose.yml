@@ -1,43 +1,327 @@
 version: '3'
 
 services:
-  
+  rule_admin:
+    container_name: rule-admin
+    hostname: rule-admin
+    build:
+      context: ../.
+      dockerfile: ./infra/rule_admin.Dockerfile
+    ports:
+      - "8444:8444"
+      - "8445:8445"
+    depends_on:
+      rule_admin_db:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    restart: on-failure
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8444/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+    networks:
+      - kafka-net
+      - psql-net
+
+  bandit_indexer:
+    container_name: bandit-indexer
+    hostname: bandit-indexer
+    build:
+      context: ../.
+      dockerfile: ./infra/bandit_indexer.Dockerfile
+    ports:
+      - "8448:8448"
+      - "8449:8449"
+    depends_on:
+      bandit_indexer_db:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    restart: on-failure
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8448/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+    networks:
+      - kafka-net
+      - psql-net
+
+  rule_diller:
+    container_name: rule-diller
+    hostname: rule-diller
+    build:
+      context: ../.
+      dockerfile: ./infra/rule_diller.Dockerfile
+    ports:
+      - "8446:8446"
+      - "8447:8447"
+    depends_on:
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    restart: on-failure
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8446/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+    networks:
+      - kafka-net
+      - redis-net
+
+  rule_analytic:
+    container_name: rule-analytic
+    hostname: rule-analytic
+    build:
+      context: ../.
+      dockerfile: ./infra/rule_analytic.Dockerfile
+    ports:
+      - "8440:8440"
+    depends_on:
+      clickhouse_db:
+        condition: service_healthy
+      rule_analytic_db:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    restart: on-failure
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8440/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+    networks:
+      - kafka-net
+      - cl-net
+      - psql-net
+
+  rule_test:
+    container_name: rule-test
+    hostname: rule-test
+    build:
+      context: ../.
+      dockerfile: ./infra/rule_test.Dockerfile
+    ports:
+      - "8441:8441"
+      - "8442:8442"
+      - "8443:8443"
+    depends_on:
+      kafka:
+        condition: service_healthy
+      prometheus:
+        condition: service_healthy
+    restart: on-failure
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8441/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+    networks:
+      - kafka-net
+      - monitoring-net
+
   rule_admin_db:
-    image: postgres:10
+    image: postgres:13
+    container_name: rule-admin-db
+    hostname: rule-admin-db
     ports:
     - "5432:5432"
     environment:
-      POSTGRES_DB: rule-admin
+      POSTGRES_DB: rule-admin-db
       POSTGRES_USER: rule-admin-user
       POSTGRES_PASSWORD: rule-admin-password
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rule-admin-user -d rule-admin-db"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - psql-net
+
+  bandit_indexer_db:
+    image: postgres:13
+    container_name: bandit-indexer-db
+    hostname: bandit-indexer-db
+    ports:
+    - "5433:5432"
+    environment:
+      POSTGRES_DB: bandit-indexer-db
+      POSTGRES_USER: bandit-indexer-user
+      POSTGRES_PASSWORD: bandit-indexer-password
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bandit-indexer-user -d bandit-indexer-db"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - psql-net
+
+  rule_analytic_db:
+    image: postgres:13
+    container_name: rule-analytic-db
+    hostname: rule-analytic-db
+    ports:
+    - "5434:5432"
+    environment:
+      POSTGRES_DB: rule-analytic-db
+      POSTGRES_USER: rule-analytic-user
+      POSTGRES_PASSWORD: rule-analytic-password
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rule-analytic-user -d rule-analytic-db"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - psql-net
+
+  clickhouse_db:
+    image: clickhouse/clickhouse-server:latest
+    container_name: clickhouse-db
+    hostname: clickhouse-db
+    ports:
+      - "8123:8123"
+      - "9000:9000"
+      - "9009:9009"
+    environment:
+      CLICKHOUSE_DB: rule_analytic_db
+      CLICKHOUSE_USER: rule_analytic_user
+      CLICKHOUSE_PASSWORD: rule-analytic-password
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
+    healthcheck:
+      test: ["CMD", "clickhouse-client", "--query", "SELECT 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - cl-net
+
+  zookeeper:
+    image: zookeeper:3.8
+    container_name: zookeeper
+    hostname: zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      ZOO_MY_ID: 1
+      ZOO_SERVERS: "server.1=zookeeper:2888:3888;2181"
+    networks:
+      - kafka-net
+    healthcheck:
+      test: ["CMD-SHELL", "zkServer.sh status"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
 
   kafka:
-    image: wurstmeister/kafka
+    image: bitnami/kafka:3.6
+    container_name: kafka
     hostname: kafka
     ports:
       - "9092:9092"
-    links:
-      - zookeeper
+      - "9093:9093"
     environment:
-      KAFKA_ADVERTISED_HOST_NAME: "127.0.0.1"
-      KAFKA_ADVERTISED_PORT: "9092"
-      KAFKA_ZOOKEEPER_CONNECT: "zookeeper:2181"
-      KAFKA_CREATE_TOPICS: "example-topic:2:1"
+      KAFKA_CFG_ZOOKEEPER_CONNECT: "zookeeper:2181"
+      KAFKA_CFG_ADVERTISED_LISTENERS: "PLAINTEXT://kafka:9092"
+      KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: "PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT"
+      KAFKA_CFG_LISTENERS: "PLAINTEXT://:9092"
+      KAFKA_CFG_INTER_BROKER_LISTENER_NAME: "PLAINTEXT"
+      KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_CFG_NUM_PARTITIONS: "3"
+      KAFKA_CFG_DEFAULT_REPLICATION_FACTOR: "1"
+      KAFKA_CREATE_TOPICS: "internal_rule_analytic:1:1,external_rule_analytic:1:1,bandit_indexer_event:1:1,rule_admin_event:1:1"
     depends_on:
-      - zookeeper
-    container_name: example-kafka
-  
-  zookeeper:
-    image: wurstmeister/zookeeper
-    ports:
-      - "2181:2181"
-    container_name: example-zookeeper
+      zookeeper:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "kafka-topics.sh", "--bootstrap-server", "kafka:9092", "--list"]
+      interval: 10s
+      timeout: 20s
+      retries: 15
+      start_period: 40s
+    networks:
+      - kafka-net
 
   redis:
     image: 'bitnami/redis:latest'
+    container_name: redis
     environment:
       - ALLOW_EMPTY_PASSWORD=yes
     networks:
-      - app-network
+      - redis-net
     ports:
       - '6379:6379'
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    hostname: prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    ports:
+      - "9090:9090"
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "http://localhost:9090/-/healthy"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    restart: unless-stopped
+    networks:
+      - monitoring-net
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    ports:
+      - "3000:3000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    depends_on:
+      prometheus:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - monitoring-net
+
+volumes:
+  prometheus_data:
+  grafana_data:
+
+networks:
+  kafka-net:
+    driver: bridge
+  redis-net:
+    driver: bridge
+  psql-net:
+    driver: bridge
+  cl-net:
+    driver: bridge
+  monitoring-net:
+    driver: bridge

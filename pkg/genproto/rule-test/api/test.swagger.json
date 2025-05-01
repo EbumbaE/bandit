@@ -1,7 +1,7 @@
 {
   "swagger": "2.0",
   "info": {
-    "title": "rule-diller/api/diller.proto",
+    "title": "rule-test/api/test.proto",
     "version": "version not set"
   },
   "consumes": [
@@ -11,14 +11,14 @@
     "application/json"
   ],
   "paths": {
-    "/v1/diller/rule/data": {
-      "get": {
-        "operationId": "RuleDillerService_GetRuleData",
+    "/v1/test/efficiency": {
+      "put": {
+        "operationId": "RuleTestService_DoEfficiencyTest",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/ruledillerGetRuleDataResponse"
+              "properties": {}
             }
           },
           "default": {
@@ -30,31 +30,27 @@
         },
         "parameters": [
           {
-            "name": "service",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "context",
-            "in": "query",
-            "required": false,
-            "type": "string"
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ruletestEfficiencyTestRequest"
+            }
           }
         ],
         "tags": [
-          "RuleDillerService"
+          "RuleTestService"
         ]
       }
     },
-    "/v1/diller/rule/statistic": {
-      "get": {
-        "operationId": "RuleDillerService_GetRuleStatistic",
+    "/v1/test/load": {
+      "put": {
+        "operationId": "RuleTestService_DoLoadTest",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/ruledillerGetRuleStatisticResponse"
+              "properties": {}
             }
           },
           "default": {
@@ -66,20 +62,16 @@
         },
         "parameters": [
           {
-            "name": "service",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "context",
-            "in": "query",
-            "required": false,
-            "type": "string"
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ruletestLoadTestRequest"
+            }
           }
         ],
         "tags": [
-          "RuleDillerService"
+          "RuleTestService"
         ]
       }
     }
@@ -97,37 +89,25 @@
         }
       }
     },
-    "ruledillerGetRuleDataResponse": {
+    "ruletestEfficiencyTestRequest": {
       "type": "object",
       "properties": {
-        "data": {
-          "type": "string"
-        },
-        "payload": {
-          "type": "string"
+        "cycle_amount": {
+          "type": "string",
+          "format": "uint64"
         }
       }
     },
-    "ruledillerGetRuleStatisticResponse": {
+    "ruletestLoadTestRequest": {
       "type": "object",
       "properties": {
-        "scores": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/ruledillerVariantScore"
-          }
-        }
-      }
-    },
-    "ruledillerVariantScore": {
-      "type": "object",
-      "properties": {
-        "variant_id": {
-          "type": "string"
+        "parallel_count": {
+          "type": "string",
+          "format": "uint64"
         },
-        "score": {
-          "type": "number",
-          "format": "double"
+        "cycle_amount": {
+          "type": "string",
+          "format": "uint64"
         }
       }
     },

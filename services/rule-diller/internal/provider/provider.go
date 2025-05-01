@@ -15,7 +15,7 @@ import (
 type Storage interface {
 	GetRuleVariants(ctx context.Context, service, context string, withData bool) ([]model.Variant, error)
 	GetRuleVersion(ctx context.Context, service, context string) (uint64, error)
-	GetVariantData(ctx context.Context, service, context, variantID string) ([]byte, error)
+	GetVariantData(ctx context.Context, service, context, variantID string) (string, error)
 
 	IncVariantCount(ctx context.Context, service, context, variantID string) error
 }
@@ -30,10 +30,14 @@ func NewProvider(storage Storage) *Provider {
 	}
 }
 
-func (p *Provider) GetRuleData(ctx context.Context, service, ctxKey string) ([]byte, []byte, error) {
+func (p *Provider) GetRuleData(ctx context.Context, service, ctxKey string) (string, string, error) {
 	variants, err := p.storage.GetRuleVariants(ctx, service, ctxKey, false)
 	if err != nil {
-		return nil, nil, errors.Wrapf(err, "GetRuleVariants for service[%s], context[%s]", service, ctxKey)
+		return "", "", errors.Wrapf(err, "GetRuleVariants for service[%s], context[%s]", service, ctxKey)
+	}
+
+	if len(variants) == 0 {
+		return "", "", errors.New("empty variants len")
 	}
 
 	options := convertToProperties(variants)
@@ -50,7 +54,7 @@ func (p *Provider) GetRuleData(ctx context.Context, service, ctxKey string) ([]b
 
 	data, err := p.storage.GetVariantData(ctx, service, ctxKey, selectedKey)
 	if err != nil {
-		return nil, nil, errors.Wrapf(err, "GetVariantData for variant[%s]", selectedKey)
+		return "", "", errors.Wrapf(err, "GetVariantData for variant[%s]", selectedKey)
 	}
 
 	payload, err := json.Marshal(model.PayloadAnalitic{
@@ -64,7 +68,7 @@ func (p *Provider) GetRuleData(ctx context.Context, service, ctxKey string) ([]b
 		logger.Error("json marshal payload", zap.String("variant_key", selectedKey), zap.Error(err))
 	}
 
-	return data, payload, nil
+	return data, string(payload), nil
 }
 
 func convertToProperties(variants []model.Variant) map[string]bandit.Probability {

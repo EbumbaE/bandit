@@ -104,7 +104,7 @@ func (s *Storage) GetRuleVariants(ctx context.Context, service, context string, 
 	for _, variantID := range variantIDs {
 		var (
 			count  uint64
-			data   []byte
+			data   string
 			ruleID string
 		)
 
@@ -124,12 +124,8 @@ func (s *Storage) GetRuleVariants(ctx context.Context, service, context string, 
 					return nil, err
 				}
 			}
-			if d, ok := res["data"]; ok {
-				data = []byte(d)
-			}
-			if id, ok := res["rule_id"]; ok {
-				ruleID = string(id)
-			}
+			data = res["data"]
+			ruleID = res["rule_id"]
 		} else {
 			cmd, ok := cmds[variantID].(*redis.StringCmd)
 			if !ok {
@@ -168,9 +164,8 @@ func (s *Storage) GetRuleVersion(ctx context.Context, service, context string) (
 	return v, err
 }
 
-func (s *Storage) GetVariantData(ctx context.Context, service, context, variantID string) ([]byte, error) {
-	data, err := s.conn.HGet(ctx, keyVariantData(service, context, variantID), "data").Bytes()
-	return data, err
+func (s *Storage) GetVariantData(ctx context.Context, service, context, variantID string) (string, error) {
+	return s.conn.HGet(ctx, keyVariantData(service, context, variantID), "data").Result()
 }
 
 func (s *Storage) GetVariantCount(ctx context.Context, service, context, variantID string) (uint64, error) {

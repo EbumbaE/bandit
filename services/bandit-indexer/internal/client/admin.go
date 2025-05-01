@@ -85,9 +85,9 @@ func decodeArm(v *pb.Variant) model.Arm {
 
 func decodeStateType(state pb.State) model.StateType {
 	switch state {
-	case pb.State_RULE_STATE_ENABLED:
+	case pb.State_STATE_ENABLED:
 		return model.StateTypeEnable
-	case pb.State_RULE_STATE_DISABLED:
+	case pb.State_STATE_DISABLED:
 		return model.StateTypeDisable
 	default:
 		return model.StateTypeDisable

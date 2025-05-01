@@ -12,7 +12,7 @@ import (
 )
 
 type DillerProvider interface {
-	GetRuleData(ctx context.Context, service, ctxKey string) ([]byte, []byte, error)
+	GetRuleData(ctx context.Context, service, ctxKey string) (string, string, error)
 	GetRuleStatistic(ctx context.Context, service, ctxKey string) ([]model.Variant, error)
 }
 
@@ -48,7 +48,7 @@ func (i *Implementation) GetRuleData(ctx context.Context, req *desc.GetRuleReque
 }
 
 func (i *Implementation) GetRuleStatistic(ctx context.Context, req *desc.GetRuleRequest) (*desc.GetRuleStatisticResponse, error) {
-	span, ctx := opentracing.StartSpanFromContext(ctx, "api/GetRule")
+	span, ctx := opentracing.StartSpanFromContext(ctx, "api/GetRuleStatistic")
 	defer span.Finish()
 
 	if len(req.GetService()) == 0 || len(req.GetContext()) == 0 {

@@ -125,13 +125,11 @@ func (s *Storage) GetRule(ctx context.Context, id string) (model.Rule, error) {
 		`
 
 	err := s.conn.GetSingle(ctx, &r, query, id)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return model.Rule{}, ErrNotFound
-		}
+	if len(r.Id) == 0 || errors.Is(err, pgx.ErrNoRows) {
+		return model.Rule{}, ErrNotFound
 	}
 
-	return r, nil
+	return r, err
 }
 
 func (s *Storage) GetRuleServiceContext(ctx context.Context, ruleID string) (string, string, error) {
@@ -144,13 +142,27 @@ func (s *Storage) GetRuleServiceContext(ctx context.Context, ruleID string) (str
 `
 
 	err := s.conn.GetSingle(ctx, &r, query, ruleID)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return "", "", ErrNotFound
-		}
+	if len(r.Service) == 0 || errors.Is(err, pgx.ErrNoRows) {
+		return "", "", ErrNotFound
 	}
 
-	return r.Service, r.Context, nil
+	return r.Service, r.Context, err
+}
+
+func (s *Storage) GetActiveRuleByServiceContext(ctx context.Context, service, context string) (string, error) {
+	query := `
+		SELECT id
+		FROM rule_info
+		WHERE service = $1 AND context = $2 AND state = $3;
+`
+
+	var id string
+	err := s.conn.GetSingle(ctx, &id, query, service, context, model.StateTypeEnable)
+	if len(id) == 0 || errors.Is(err, pgx.ErrNoRows) {
+		return "", ErrNotFound
+	}
+
+	return id, err
 }
 
 func (s *Storage) CreateRule(ctx context.Context, rule model.Rule) (model.Rule, error) {
@@ -180,8 +192,8 @@ func (s *Storage) UpdateRule(ctx context.Context, rule model.Rule) (model.Rule, 
 	query := `
 		UPDATE rule_info 
 		SET 
-			name = $2
-			description = $3
+			name = $2,
+			description = $3,
 			updated_at = NOW() at time zone 'utc' 
 		WHERE id = $1;
 `
@@ -195,7 +207,7 @@ func (s *Storage) SetRuleState(ctx context.Context, id string, state model.State
 	query := `
 		UPDATE rule_info 
 		SET 
-			state = $2
+			state = $2,
 			updated_at = NOW() at time zone 'utc' 
 		WHERE id = $1;
 `
@@ -215,13 +227,11 @@ func (s *Storage) GetVariant(ctx context.Context, ruleID, variantID string) (mod
 `
 
 	err := s.conn.GetSingle(ctx, &v, query, variantID, ruleID)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return model.Variant{}, ErrNotFound
-		}
+	if len(v.Id) == 0 || errors.Is(err, pgx.ErrNoRows) {
+		return model.Variant{}, ErrNotFound
 	}
 
-	return v, nil
+	return v, err
 }
 
 func (s *Storage) GetVariants(ctx context.Context, ruleID string) ([]model.Variant, error) {
@@ -234,13 +244,11 @@ func (s *Storage) GetVariants(ctx context.Context, ruleID string) ([]model.Varia
 `
 
 	err := s.conn.GetSlice(ctx, &v, query, ruleID)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, ErrNotFound
-		}
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, ErrNotFound
 	}
 
-	return v, nil
+	return v, err
 }
 
 func (s *Storage) AddVariant(ctx context.Context, ruleID string, v model.Variant) (model.Variant, error) {
@@ -270,7 +278,7 @@ func (s *Storage) SetVariantState(ctx context.Context, id string, state model.St
 	query := `
 		UPDATE variant_info 
 		SET 
-			state = $2
+			state = $2,
 			updated_at = NOW() at time zone 'utc' 
 		WHERE id = $1;
 `
