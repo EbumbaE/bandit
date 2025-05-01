@@ -93,6 +93,7 @@ func (p *Provider) CreateRule(ctx context.Context, r model.Rule) (model.Rule, er
 	}
 
 	variants := r.Variants
+	r.Variants = nil
 
 	r, err = p.storage.CreateRule(ctx, r)
 	if err != nil {
@@ -194,11 +195,11 @@ func (p *Provider) SetVariantState(ctx context.Context, ruleID, variantID string
 
 	switch state {
 	case model.StateTypeDisable:
-		if err := p.notifier.SendVariant(ctx, ruleID, variantID, notifier.ActionCreate); err != nil {
+		if err := p.notifier.SendVariant(ctx, ruleID, variantID, notifier.ActionInactive); err != nil {
 			logger.Error("failed send inactive variant event", zap.Error(err))
 		}
 	case model.StateTypeEnable:
-		if err := p.notifier.SendVariant(ctx, ruleID, variantID, notifier.ActionCreate); err != nil {
+		if err := p.notifier.SendVariant(ctx, ruleID, variantID, notifier.ActionActive); err != nil {
 			logger.Error("failed send active variant event", zap.Error(err))
 		}
 	}

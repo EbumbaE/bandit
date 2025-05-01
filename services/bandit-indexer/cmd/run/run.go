@@ -17,6 +17,7 @@ import (
 
 func Run() {
 	configPath := flag.String("config", "", "config path")
+	swaggerPath := flag.String("swagger", "", "swagger path")
 	flag.Parse()
 
 	config := readConfig(*configPath)
@@ -36,7 +37,7 @@ func Run() {
 
 	defer app.Close()
 
-	if err := app.Run(ctx); err != nil {
+	if err := app.Run(ctx, *swaggerPath); err != nil {
 		logger.Fatal("can't run app", zap.Error(err))
 	}
 

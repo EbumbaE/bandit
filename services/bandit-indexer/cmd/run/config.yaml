@@ -1,16 +1,15 @@
 service:
-  bandit_indexer_address: localhost:8448
+  bandit_indexer_address: bandit-indexer:8448
   swagger_address: :8449
   swagger_host: localhost:8449
-  rule_admin_adress: localhost:8444
+  rule_admin_adress: rule-admin:8444
   connection_timeout: 10s
 
 postgres:
-  dsn: postgres://bandit-indexer-user:bandit-indexer-password@localhost:5432/bandit-indexer-db
+  dsn: postgres://bandit-indexer-user:bandit-indexer-password@bandit-indexer-db:5432/bandit-indexer-db
 
 kafka:
-  brokers: [localhost:9093]
+  brokers: [kafka:9092]
   admin_topic: rule_admin_event
   analytic_topic: internal_rule_analytic
   indexer_topic: bandit_indexer_event
-

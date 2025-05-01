@@ -1,5 +1,5 @@
 postgres:
-  dsn: postgres://rule-analytic-user:rule-analytic-password@localhost:5432/rule-analytic-db
+  dsn: postgres://rule-analytic-user:rule-analytic-password@rule-analytic-db:5432/rule-analytic-db
 
 clickhouse:
   host: 0.0.0.1
@@ -8,6 +8,6 @@ clickhouse:
   dbname: rule-analytic
 
 kafka:
-  brokers: [localhost:9093]
+  brokers: [kafka:9092]
   external_topic: external_rule_analytic
   internal_topic: internal_rule_analytic

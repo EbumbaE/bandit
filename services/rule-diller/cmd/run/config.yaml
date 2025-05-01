@@ -1,14 +1,14 @@
 service:
-  rule_diller_address: localhost:8446
-  swagger_address: :8445
+  rule_diller_address: rule-diller:8446
+  swagger_address: :8447
   swagger_host: localhost:8447
-  bandit_indexer_address: localhost:8448
-  rule_admin_address: localhost:8444
+  bandit_indexer_address: bandit-indexer:8448
+  rule_admin_address: rule-admin:8444
   connection_timeout: 10s
 
 redis:
-  dsn: redis://localhost:6379/0
+  dsn: redis://redis:6379/0
 
 kafka:
-  brokers: [localhost:9093]
+  brokers: [kafka:9092]
   topic: bandit_indexer_event

@@ -142,7 +142,7 @@ func (s *Storage) GetRuleServiceContext(ctx context.Context, ruleID string) (str
 `
 
 	err := s.conn.GetSingle(ctx, &r, query, ruleID)
-	if len(r.Id) == 0 || errors.Is(err, pgx.ErrNoRows) {
+	if len(r.Service) == 0 || errors.Is(err, pgx.ErrNoRows) {
 		return "", "", ErrNotFound
 	}
 

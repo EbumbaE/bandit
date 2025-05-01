@@ -5,13 +5,16 @@ import (
 	"sync"
 
 	"go.uber.org/zap"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 
+	rule_admin_client "github.com/EbumbaE/bandit/pkg/genproto/rule-admin/api"
 	"github.com/EbumbaE/bandit/pkg/kafka"
 	"github.com/EbumbaE/bandit/pkg/logger"
 	"github.com/EbumbaE/bandit/pkg/psql"
 
-	rule_admin_service "github.com/EbumbaE/bandit/services/bandit-indexer/app"
-	rule_admin_wrapper "github.com/EbumbaE/bandit/services/bandit-indexer/internal/client"
+	bandit_indexer_service "github.com/EbumbaE/bandit/services/bandit-indexer/app"
+	client_wrapper "github.com/EbumbaE/bandit/services/bandit-indexer/internal/client"
 	indexer_consumer "github.com/EbumbaE/bandit/services/bandit-indexer/internal/consumer"
 	"github.com/EbumbaE/bandit/services/bandit-indexer/internal/notifier"
 	"github.com/EbumbaE/bandit/services/bandit-indexer/internal/provider"
@@ -28,7 +31,7 @@ type notifiers struct {
 }
 
 type clients struct {
-	adminWrapper *rule_admin_wrapper.AdminWrapper
+	adminWrapper *client_wrapper.AdminWrapper
 }
 
 type connections struct {
@@ -50,7 +53,7 @@ type application struct {
 	connections  connections
 	repositories repositories
 	provider     *provider.Provider
-	service      *rule_admin_service.Implementation
+	service      *bandit_indexer_service.Implementation
 	consumers    consumers
 
 	cfg Config
@@ -63,6 +66,7 @@ func newApp(ctx context.Context, cfg *Config) *application {
 		wg:  &sync.WaitGroup{},
 	}
 
+	a.initClients(ctx)
 	a.initProducers(ctx)
 	a.initConnections(ctx)
 	a.initRepos(ctx)
@@ -73,10 +77,19 @@ func newApp(ctx context.Context, cfg *Config) *application {
 	return &a
 }
 
+func (a *application) initClients(ctx context.Context) {
+	conn, err := grpc.DialContext(ctx, a.cfg.Service.RuleAdminAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		logger.Fatal("connect to bandit-indexer", zap.Error(err))
+	}
+
+	a.clients.adminWrapper = client_wrapper.NewAdminWrapper(rule_admin_client.NewRuleAdminServiceClient(conn))
+}
+
 func (a *application) initProducers(ctx context.Context) {
 	producer, err := kafka.NewSyncProducer(ctx, a.cfg.Kafka.IndexerTopic, a.cfg.Kafka.Brokers)
 	if err != nil {
-		logger.Fatal("init rule-admin producer", zap.Error(err))
+		logger.Fatal("init bandit-indexer producer", zap.Error(err))
 	}
 
 	a.producers.banditIndexer = producer
@@ -107,7 +120,7 @@ func (a *application) initProvider() {
 }
 
 func (a *application) initService() {
-	a.service = rule_admin_service.NewService(a.provider)
+	a.service = bandit_indexer_service.NewService(a.provider)
 }
 
 func (a *application) initConsumer(ctx context.Context) {
@@ -132,9 +145,9 @@ func (a *application) initConsumer(ctx context.Context) {
 	a.consumers.ruleAdminEvent = consumer
 }
 
-func (a *application) Run(ctx context.Context) error {
+func (a *application) Run(ctx context.Context, swaggerPath string) error {
 	server.StarBanditIndexer(ctx, a.service, a.wg, a.cfg.Service.GrpcAddress)
-	server.InitBanditIndexerSwagger(ctx, a.wg, a.cfg.Service.SwaggerAddress, a.cfg.Service.SwaggerHost, a.cfg.Service.GrpcAddress)
+	server.InitBanditIndexerSwagger(ctx, a.wg, swaggerPath, a.cfg.Service.SwaggerAddress, a.cfg.Service.SwaggerHost, a.cfg.Service.GrpcAddress)
 
 	return nil
 }

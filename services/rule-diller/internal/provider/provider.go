@@ -36,6 +36,10 @@ func (p *Provider) GetRuleData(ctx context.Context, service, ctxKey string) (str
 		return "", "", errors.Wrapf(err, "GetRuleVariants for service[%s], context[%s]", service, ctxKey)
 	}
 
+	if len(variants) == 0 {
+		return "", "", errors.New("empty variants len")
+	}
+
 	options := convertToProperties(variants)
 	selectedKey := bandit.SelectByProbabilities(options, bandit.DefaultExplorationFactor)
 

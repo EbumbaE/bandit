@@ -22,8 +22,53 @@ services:
       retries: 20
     networks:
       - kafka-net
-      - redis-net
       - psql-net
+
+  bandit_indexer:
+    hostname: bandit-indexer
+    build:
+      context: ../.
+      dockerfile: ./infra/bandit_indexer.Dockerfile
+    ports:
+      - "8448:8448"
+      - "8449:8449"
+    depends_on:
+      bandit_indexer_db:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    restart: on-failure
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8448/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+    networks:
+      - kafka-net
+      - psql-net
+
+  rule_diller:
+    hostname: rule-diller
+    build:
+      context: ../.
+      dockerfile: ./infra/rule_diller.Dockerfile
+    ports:
+      - "8446:8446"
+      - "8447:8447"
+    depends_on:
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    restart: on-failure
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8446/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+    networks:
+      - kafka-net
+      - redis-net
 
   rule_admin_db:
     image: postgres:13
@@ -51,6 +96,11 @@ services:
       POSTGRES_DB: bandit-indexer-db
       POSTGRES_USER: bandit-indexer-user
       POSTGRES_PASSWORD: bandit-indexer-password
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bandit-indexer-user -d bandit-indexer-db"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
     networks:
       - psql-net
 
@@ -63,6 +113,11 @@ services:
       POSTGRES_DB: rule-analytic-db
       POSTGRES_USER: rule-analytic-user
       POSTGRES_PASSWORD: rule-analytic-password
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rule-analytic-user -d rule-analytic-db"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
     networks:
       - psql-net
 
@@ -118,6 +173,11 @@ services:
       - redis-net
     ports:
       - '6379:6379'
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
 networks:
   kafka-net:

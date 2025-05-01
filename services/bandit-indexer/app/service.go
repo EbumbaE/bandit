@@ -49,12 +49,12 @@ func (i *Implementation) GetRuleScores(ctx context.Context, req *desc.GetRuleSco
 func decodeArms(in []model.Arm) []*desc.Variant {
 	res := make([]*desc.Variant, len(in))
 
-	for _, v := range in {
-		res = append(res, &desc.Variant{
+	for i, v := range in {
+		res[i] = &desc.Variant{
 			Id:    v.VariantId,
 			Score: v.Score,
 			Count: v.Count,
-		})
+		}
 	}
 
 	return res
