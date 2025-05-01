@@ -214,7 +214,7 @@ func (s *Storage) UpdateArm(ctx context.Context, variantID string, config []byte
 	query := `
 		UPDATE arm_info 
 		SET 
-			config = $2, count = $3
+			config = $2, count = $3,
 			updated_at = NOW() at time zone 'utc' 
 		WHERE variant_id = $1;
 `

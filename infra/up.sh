@@ -11,4 +11,4 @@ docker-compose up -d rule_analytic -d --build
 docker-compose up -d rule_test -d --build
 docker-compose up -d grafana -d --build
 
-docker ps -a
+docker ps --format "table {{.ID}}\t{{.Names}}\t{{.Status}}"

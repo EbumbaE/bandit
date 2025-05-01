@@ -64,7 +64,7 @@ func initClickSchema(ctx context.Context, db clickhouse.Database) error {
 			variant_id    UUID,
 			rule_version  UInt64,
 			action        String,
-			amount        String,
+			amount        Float64,
 			created_at    DateTime DEFAULT now(),
 			updated_at    DateTime DEFAULT now()
 		) ENGINE = MergeTree()

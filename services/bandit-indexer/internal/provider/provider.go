@@ -73,7 +73,7 @@ func (p *Provider) ApplyReward(ctx context.Context, event consumer.AnalyticEvent
 		return errors.Wrap(err, "coreArm.Serialize")
 	}
 
-	if err = p.storage.UpdateArm(ctx, arm.VariantId, arm.Config, arm.Count); err != nil {
+	if err = p.storage.UpdateArm(ctx, arm.VariantId, arm.Config, coreArm.Count); err != nil {
 		return errors.Wrap(err, "storage.SetArmConfig")
 	}
 

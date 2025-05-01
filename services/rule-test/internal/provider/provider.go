@@ -6,11 +6,9 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"go.uber.org/zap"
 	"golang.org/x/exp/rand"
 	"golang.org/x/sync/errgroup"
 
-	"github.com/EbumbaE/bandit/pkg/logger"
 	"github.com/EbumbaE/bandit/services/rule-test/internal/metrics"
 	"github.com/EbumbaE/bandit/services/rule-test/internal/notifier"
 )
@@ -135,14 +133,14 @@ func (p *Provider) doCycle(ctx context.Context, localCtx string, n int) error {
 			return errors.Wrap(err, "create rule")
 		}
 
-		metrics.SummaryResponceTime.Observe(float64(time.Since(startTime).Milliseconds()))
+		metrics.ResponceTime.WithLabelValues("GetRuleData", "ok").Observe(float64(time.Since(startTime).Milliseconds()))
 
 		if err := p.doAnalytic(ctx, payload); err != nil {
 			return errors.Wrap(err, "doAnalytic")
 		}
 
 		metrics.DataCounter.WithLabelValues(string(data)).Inc()
-		logger.Info("[DoEfficiencyTest] data", zap.String("data", string(data)))
+		// logger.Info("[DoEfficiencyTest] data", zap.String("data", string(data)))
 	}
 
 	return nil
