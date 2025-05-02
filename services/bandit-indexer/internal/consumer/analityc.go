@@ -8,7 +8,7 @@ import (
 )
 
 type Provider interface {
-	ApplyReward(ctx context.Context, ruleID, variantID string, reward float64, version uint64) error
+	ApplyReward(ctx context.Context, event AnalyticEvent) error
 }
 
 type AnalyticConsumer struct {
@@ -27,6 +27,7 @@ type AnalyticEvent struct {
 	RuleID        string  `json:"rule_id"`
 	VariantID     string  `json:"variant_id"`
 	Reward        float64 `json:"reward"`
+	Count         uint64  `json:"count"`
 	BanditVersion uint64  `json:"rule_version"`
 }
 
@@ -36,7 +37,7 @@ func (c *AnalyticConsumer) Handle(ctx context.Context, msg []byte) error {
 		return errors.Wrapf(err, "unmarshal message: %s", string(msg))
 	}
 
-	if err := c.provider.ApplyReward(ctx, event.RuleID, event.VariantID, event.Reward, event.BanditVersion); err != nil {
+	if err := c.provider.ApplyReward(ctx, *event); err != nil {
 		return errors.Wrapf(err, "provider.ApplyReward for event [%v]", event)
 	}
 

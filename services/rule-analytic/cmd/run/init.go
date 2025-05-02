@@ -99,7 +99,7 @@ func (a *application) initRepos(ctx context.Context) {
 func (a *application) initConsumer(ctx context.Context) {
 	handler := consumer.NewConsumer(a.repositories.ruleAnalytic, a.notifiers.ruleAdmin)
 
-	consumer, err := kafka.NewKafkaConsumer(ctx, a.cfg.Kafka.Brokers, a.cfg.Kafka.ExternalTopic, handler.Handle)
+	consumer, err := kafka.NewKafkaConsumer(ctx, a.cfg.Kafka.Brokers, a.cfg.Kafka.ExternalTopic, handler.Handle, handler.Close)
 	if err != nil {
 		logger.Fatal("init rule-analytic indexer consumer", zap.Error(err))
 	}
@@ -114,6 +114,7 @@ func (a *application) Run(ctx context.Context) error {
 }
 
 func (a *application) Close() {
+	a.consumers.externalEvent.Close()
 	a.connections.psqlDB.Close()
 	a.producers.ruleAdmin.Close()
 

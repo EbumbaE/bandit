@@ -100,16 +100,16 @@ func (p *Provider) CreateRule(ctx context.Context, r model.Rule) (model.Rule, er
 		return model.Rule{}, err
 	}
 
+	if err := p.notifier.SendRule(ctx, r.Id, notifier.ActionCreate); err != nil {
+		logger.Error("failed send create rule event", zap.Error(err))
+	}
+
 	for _, v := range variants {
 		addedV, err := p.AddVariant(ctx, r.Id, v)
 		if err != nil {
 			return r, err
 		}
 		r.Variants = append(r.Variants, addedV)
-	}
-
-	if err := p.notifier.SendRule(ctx, r.Id, notifier.ActionCreate); err != nil {
-		logger.Error("failed send create rule event", zap.Error(err))
 	}
 
 	return r, nil

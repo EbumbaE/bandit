@@ -42,13 +42,13 @@ func initPsqlSchema(ctx context.Context, db psql.Database) error {
 
 			reward DOUBLE PRECISION,
 			rule_version BIGINT,
-			event_amount BIGINT,
-			
+			count BIGINT,
+
 			created_at TIMESTAMP NOT NULL DEFAULT now(),
 			updated_at TIMESTAMP NOT NULL DEFAULT now()
 		);
 		
-		CREATE UNIQUE INDEX IF NOT EXISTS analytic_info_rule_id_variant_id ON analytic_info(rule_id, variant_id);
+		CREATE UNIQUE INDEX IF NOT EXISTS analytic_info_rule_id_variant_id ON analytic_info(rule_id, variant_id, rule_version);
 `
 
 	_, err := db.Exec(ctx, query)
@@ -64,9 +64,8 @@ func initClickSchema(ctx context.Context, db clickhouse.Database) error {
 			variant_id    UUID,
 			rule_version  UInt64,
 			action        String,
-			amount        String,
-			created_at    DateTime DEFAULT now(),
-			updated_at    DateTime DEFAULT now()
+			amount        Float64,
+			created_at    DateTime DEFAULT now()
 		) ENGINE = MergeTree()
 		ORDER BY (created_at, rule_id, variant_id);
 	`
@@ -78,39 +77,84 @@ func initClickSchema(ctx context.Context, db clickhouse.Database) error {
 	return nil
 }
 
-func (s *Storage) CreateAnalyticEvent(ctx context.Context, event model.BanditEvent) error {
+func (s *Storage) ApplyAnalyticEvent(ctx context.Context, events []model.BanditEvent) error {
 	query := `
-		INSERT INTO analytic_info
-		(
-			created_at,
-			rule_id, variant_id, reward, rule_version, event_amount
-		)
-		VALUES
-		(
-			NOW() at time zone 'utc',
+		INSERT INTO analytic_info 
+			(created_at, updated_at, rule_id, variant_id, rule_version, reward, count)
+		VALUES (
+			NOW() at time zone 'utc', NOW() at time zone 'utc',
 			$1, $2, $3, $4, $5
-		);
+		)
+		ON CONFLICT (rule_id, variant_id, rule_version) DO UPDATE SET
+			reward = analytic_info.reward + EXCLUDED.reward,
+			count = analytic_info.count + EXCLUDED.count,
+			updated_at = NOW()
 `
 
-	_, err := s.psqlDB.Exec(ctx, query, event.RuleID, event.VariantID, event.Reward, event.RuleVersion, 1)
+	err := s.psqlDB.WrapWithTx(ctx, func(tx pgx.Tx) error {
+		stmt, err := tx.Prepare(ctx, "apply-events", query)
+		if err != nil {
+			return errors.Wrap(err, "prepare statement")
+		}
+
+		for _, event := range events {
+			_, err := tx.Exec(ctx, stmt.SQL,
+				event.RuleID,
+				event.VariantID,
+				event.RuleVersion,
+				event.Reward,
+				event.Count,
+			)
+			if err != nil {
+				return errors.Wrapf(err, "exec event: %v", event)
+			}
+		}
+
+		return nil
+	})
 
 	return err
 }
 
-func (s *Storage) RemoveAnalyticEvent(ctx context.Context, ruleID, variantID string) error {
+func (s *Storage) GetAnalyticEvents(ctx context.Context) ([]model.BanditEvent, error) {
 	query := `
-		DELETE FROM analytic_info
-		WHERE rule_id = $1 AND variant_id = $2;
+        SELECT 
+            rule_id, variant_id, rule_version, 
+            reward, count 
+        FROM analytic_info;
+    `
+
+	var events []model.BanditEvent
+	if err := s.psqlDB.GetSlice(ctx, &events, query); err != nil {
+		return nil, errors.Wrap(err, "query events")
+	}
+
+	return events, nil
+}
+
+func (s *Storage) DeleteAnalyticEvents(ctx context.Context, events []model.BanditEvent) error {
+	if len(events) == 0 {
+		return nil
+	}
+
+	query := `
+        DELETE FROM analytic_info
+        WHERE rule_id = $1 AND variant_id = $2 AND rule_version = $3
 `
 
-	_, err := s.psqlDB.Exec(ctx, query, ruleID, variantID)
+	for _, event := range events {
+		_, err := s.psqlDB.Exec(ctx, query, event.RuleID, event.VariantID, event.RuleVersion)
+		if err != nil {
+			return errors.Wrapf(err, "delete event: %v", event)
+		}
+	}
 
-	return err
+	return nil
 }
 
 func (s *Storage) InsertHistoryBatch(ctx context.Context, batch []model.HistoryEvent) error {
 	return s.clickDB.WrapBatchWithTx(
-		"INSERT INTO full_analytic_info",
+		"INSERT INTO full_analytic_info (service, context, rule_id, variant_id, rule_version, action, amount)",
 		func(tx *sql.Stmt) error {
 			for _, event := range batch {
 				_, err := tx.Exec(
@@ -119,7 +163,7 @@ func (s *Storage) InsertHistoryBatch(ctx context.Context, batch []model.HistoryE
 					event.Payload.RuleID,
 					event.Payload.VariantID,
 					event.Payload.RuleVersion,
-					event.Action,
+					event.Action.String(),
 					event.Amount,
 				)
 				if err != nil {

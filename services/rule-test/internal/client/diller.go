@@ -4,6 +4,8 @@ import (
 	"context"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	pb "github.com/EbumbaE/bandit/pkg/genproto/rule-diller/api"
 )
@@ -24,5 +26,8 @@ func NewRuleDillerWrapper(cl DillerClient) *RuleDillerWrapper {
 
 func (w *RuleDillerWrapper) GetRuleData(ctx context.Context, service, context string) (string, string, error) {
 	resp, err := w.cl.GetRuleData(ctx, &pb.GetRuleRequest{Service: service, Context: context})
-	return resp.GetData(), resp.GetPayload(), err
+	if status.Code(err) == codes.Internal {
+		return "", "", err
+	}
+	return resp.GetData(), resp.GetPayload(), nil
 }

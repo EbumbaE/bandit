@@ -124,7 +124,7 @@ func (s *Storage) UpBanditVersion(ctx context.Context, ruleID string) error {
 	query := `
 		UPDATE bandit_info 
 		SET 
-			config = config + 1,
+			version = version + 1,
 			updated_at = NOW() at time zone 'utc' 
 		WHERE rule_id = $1;
 `
@@ -210,16 +210,16 @@ func (s *Storage) AddArm(ctx context.Context, ruleID string, v model.Arm) (model
 	return v, nil
 }
 
-func (s *Storage) SetArmConfig(ctx context.Context, variantID string, config []byte) error {
+func (s *Storage) UpdateArm(ctx context.Context, variantID string, config []byte, count uint64) error {
 	query := `
 		UPDATE arm_info 
 		SET 
-			config = $2,
+			config = $2, count = $3,
 			updated_at = NOW() at time zone 'utc' 
 		WHERE variant_id = $1;
 `
 
-	_, err := s.conn.Exec(ctx, query, variantID, config)
+	_, err := s.conn.Exec(ctx, query, variantID, config, count)
 
 	return err
 }

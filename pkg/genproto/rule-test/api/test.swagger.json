@@ -92,9 +92,12 @@
     "ruletestEfficiencyTestRequest": {
       "type": "object",
       "properties": {
-        "cycle_amount": {
+        "target_rps": {
           "type": "string",
           "format": "uint64"
+        },
+        "duration": {
+          "type": "string"
         }
       }
     },
@@ -105,9 +108,12 @@
           "type": "string",
           "format": "uint64"
         },
-        "cycle_amount": {
+        "target_rps": {
           "type": "string",
           "format": "uint64"
+        },
+        "duration": {
+          "type": "string"
         }
       }
     },

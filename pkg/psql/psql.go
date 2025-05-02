@@ -18,6 +18,8 @@ type Database interface {
 	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
 	QueryRow(ctx context.Context, sql string, args ...any) pgx.Row
 
+	WrapWithTx(ctx context.Context, exec func(tx pgx.Tx) error) error
+
 	Close()
 }
 
@@ -60,6 +62,30 @@ func (d *database) GetSlice(ctx context.Context, pointerOnSliceDst any, query st
 
 func (d *database) Exec(ctx context.Context, query string, args ...any) (commandTag pgconn.CommandTag, err error) {
 	return d.conn.Exec(ctx, query, args...)
+}
+
+func (d *database) Begin(ctx context.Context) (pgx.Tx, error) {
+	return d.conn.Begin(ctx)
+}
+
+func (d *database) WrapWithTx(ctx context.Context, exec func(tx pgx.Tx) error) error {
+	tx, err := d.conn.Begin(ctx)
+	if err != nil {
+		return errors.Wrapf(err, "begin")
+	}
+
+	if execErr := exec(tx); execErr != nil {
+		if err := tx.Rollback(ctx); err != nil {
+			return errors.Wrapf(err, "rollback err with exec func %s", execErr.Error())
+		}
+		return errors.Wrapf(execErr, "exec func")
+	}
+
+	if err = tx.Commit(ctx); err != nil {
+		return errors.Wrapf(err, "scope commit")
+	}
+
+	return nil
 }
 
 func (d *database) Query(ctx context.Context, query string, args ...any) (pgx.Rows, error) {

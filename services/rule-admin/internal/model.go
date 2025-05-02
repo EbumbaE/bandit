@@ -15,8 +15,8 @@ type Rule struct {
 type StateType string
 
 var (
-	StateTypeEnable  StateType = "enable"
-	StateTypeDisable StateType = "disable"
+	StateTypeEnable  StateType = "enabled"
+	StateTypeDisable StateType = "disabled"
 )
 
 type Variant struct {

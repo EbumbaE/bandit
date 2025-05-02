@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 
 	model "github.com/EbumbaE/bandit/services/bandit-indexer/internal"
+	"github.com/EbumbaE/bandit/services/bandit-indexer/internal/consumer"
 )
 
 type Storage interface {
@@ -14,7 +15,7 @@ type Storage interface {
 	GetArms(ctx context.Context, ruleID string) ([]model.Arm, error)
 	GetArm(ctx context.Context, variantID string) (model.Arm, error)
 
-	SetArmConfig(ctx context.Context, variantID string, config []byte) error
+	UpdateArm(ctx context.Context, variantID string, config []byte, count uint64) error
 	UpBanditVersion(ctx context.Context, ruleID string) error
 }
 
@@ -42,13 +43,13 @@ func (p *Provider) GetBandit(ctx context.Context, ruleID string) (model.Bandit, 
 	return bandit, nil
 }
 
-func (p *Provider) ApplyReward(ctx context.Context, ruleID, variantID string, reward float64, version uint64) error {
-	bandit, err := p.storage.GetBanditByRuleID(ctx, ruleID)
+func (p *Provider) ApplyReward(ctx context.Context, event consumer.AnalyticEvent) error {
+	bandit, err := p.storage.GetBanditByRuleID(ctx, event.RuleID)
 	if err != nil {
 		return errors.Wrap(err, "storage.GetBanditByRuleID")
 	}
 
-	arm, err := p.storage.GetArm(ctx, variantID)
+	arm, err := p.storage.GetArm(ctx, event.VariantID)
 	if err != nil {
 		return errors.Wrap(err, "storage.GetArm")
 	}
@@ -63,16 +64,16 @@ func (p *Provider) ApplyReward(ctx context.Context, ruleID, variantID string, re
 	if err := coreArm.Deserialize(arm.Config); err != nil {
 		return errors.Wrap(err, "coreArm.Deserialize")
 	}
-	coreArm.Version = version
+	coreArm.Version = event.BanditVersion
 
-	coreArm = coreBandit.Calculate(coreArm, reward)
+	coreArm = coreBandit.Calculate(coreArm, event.Reward, event.Count)
 
 	arm.Config, err = coreArm.Serialize()
 	if err != nil {
 		return errors.Wrap(err, "coreArm.Serialize")
 	}
 
-	if err = p.storage.SetArmConfig(ctx, arm.VariantId, arm.Config); err != nil {
+	if err = p.storage.UpdateArm(ctx, arm.VariantId, arm.Config, coreArm.Count); err != nil {
 		return errors.Wrap(err, "storage.SetArmConfig")
 	}
 

@@ -106,7 +106,7 @@ func (a *application) initProvider() {
 func (a *application) initConsumer(ctx context.Context) {
 	handler := consumer.NewConsumer(a.clients.indexerWrapper, a.clients.adminWrapper, a.repositories.ruleDiller)
 
-	consumer, err := kafka.NewKafkaConsumer(ctx, a.cfg.Kafka.Brokers, a.cfg.Kafka.Topic, handler.Handle)
+	consumer, err := kafka.NewKafkaConsumer(ctx, a.cfg.Kafka.Brokers, a.cfg.Kafka.Topic, handler.Handle, nil)
 	if err != nil {
 		logger.Fatal("init rule-diller indexer consumer", zap.Error(err))
 	}

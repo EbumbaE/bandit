@@ -6,8 +6,8 @@ import (
 )
 
 var (
-	DataCounter         *prometheus.CounterVec
-	SummaryResponceTime prometheus.Summary
+	DataCounter  *prometheus.CounterVec
+	ResponceTime *prometheus.HistogramVec
 )
 
 func init() {
@@ -16,15 +16,14 @@ func init() {
 			Namespace: "rule_test",
 			Name:      "data_count",
 		},
-		[]string{"data"},
+		[]string{"context", "data"},
 	)
-	SummaryResponceTime = promauto.NewSummary(prometheus.SummaryOpts{
-		Namespace: "rule_test",
-		Name:      "data_responce_time_ms",
-		Objectives: map[float64]float64{
-			0.5:  10,
-			0.9:  20,
-			0.99: 50,
+	ResponceTime = promauto.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Name:    "grpc_handler_duration_ms",
+			Help:    "Duration of gRPC handler execution in ms",
+			Buckets: []float64{0.5, 1, 2, 3, 5, 10, 12, 15, 20, 50, 100},
 		},
-	})
+		[]string{"handler", "status"},
+	)
 }

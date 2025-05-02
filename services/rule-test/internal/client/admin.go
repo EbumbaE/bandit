@@ -36,15 +36,16 @@ func (w *RuleAdminWrapper) CreateRule(ctx context.Context, service, context stri
 		Service:     service,
 		Context:     context,
 		BanditKey:   "gaussian",
+		State:       pb.State_STATE_ENABLED,
 		Variants: []*pb.Variant{
 			{
 				Name:  "arm1",
-				Data:  `{"Value": [1, 2, 3]}`,
+				Data:  `{"Value": [1, 2]}`,
 				State: pb.State_STATE_ENABLED,
 			},
 			{
 				Name:  "arm2",
-				Data:  `{"Value": [4, 5, 6]}`,
+				Data:  `{"Value": [3]}`,
 				State: pb.State_STATE_ENABLED,
 			},
 		},
@@ -58,7 +59,7 @@ func (w *RuleAdminWrapper) AddVariant(ctx context.Context, ruleID string) (strin
 		RuleId: ruleID,
 		Variant: &pb.Variant{
 			Name:  "arm3",
-			Data:  `{"Value": [7, 8, 9]}`,
+			Data:  `{"Value": [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17]}`,
 			State: pb.State_STATE_ENABLED,
 		},
 	})
