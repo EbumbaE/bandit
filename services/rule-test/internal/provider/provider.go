@@ -55,7 +55,7 @@ func NewProvider(diller DillerClient, admin AdminClient, notifier Notifier) *Pro
 	}
 }
 
-func (p *Provider) DoLoadTest(ctx context.Context, parallelCount, cycleAmount int) error {
+func (p *Provider) DoLoadTest(ctx context.Context, parallelCount, targetRPS int, duration time.Duration) error {
 	if err := p.admin.CreateGaussianBanditIfExist(ctx); err != nil {
 		return errors.Wrap(err, "create bandit")
 	}
@@ -71,7 +71,7 @@ func (p *Provider) DoLoadTest(ctx context.Context, parallelCount, cycleAmount in
 				return errors.Wrap(err, "create rule")
 			}
 
-			if err := p.doCycle(gCtx, localCtx, cycleAmount); err != nil {
+			if err := p.doCycle(gCtx, localCtx, targetRPS, duration); err != nil {
 				return errors.Wrap(err, "doCycle")
 			}
 
@@ -82,12 +82,12 @@ func (p *Provider) DoLoadTest(ctx context.Context, parallelCount, cycleAmount in
 	return errGr.Wait()
 }
 
-func (p *Provider) DoEfficiencyTest(ctx context.Context, cycleAmount int) error {
+func (p *Provider) DoEfficiencyTest(ctx context.Context, targetRPS int, duration time.Duration) error {
 	if err := p.admin.CreateGaussianBanditIfExist(ctx); err != nil {
 		return errors.Wrap(err, "create bandit")
 	}
 
-	localCtx := fmt.Sprintf(loadRuleContextFormat, rand.Intn(1_000_000_000))
+	localCtx := fmt.Sprintf(ruleContextFormat, rand.Intn(1_000_000_000))
 
 	ruleID, err := p.admin.CreateRule(ctx, service, localCtx)
 	if err != nil {
@@ -96,7 +96,7 @@ func (p *Provider) DoEfficiencyTest(ctx context.Context, cycleAmount int) error 
 
 	time.Sleep(1000 * time.Microsecond)
 
-	if err := p.doCycle(ctx, localCtx, cycleAmount); err != nil {
+	if err := p.doCycle(ctx, localCtx, targetRPS, duration); err != nil {
 		return errors.Wrap(err, "1 doCycle")
 	}
 
@@ -107,7 +107,7 @@ func (p *Provider) DoEfficiencyTest(ctx context.Context, cycleAmount int) error 
 
 	time.Sleep(1000 * time.Microsecond)
 
-	if err := p.doCycle(ctx, localCtx, cycleAmount); err != nil {
+	if err := p.doCycle(ctx, localCtx, targetRPS, duration); err != nil {
 		return errors.Wrap(err, "2 doCycle")
 	}
 
@@ -117,30 +117,38 @@ func (p *Provider) DoEfficiencyTest(ctx context.Context, cycleAmount int) error 
 
 	time.Sleep(1000 * time.Microsecond)
 
-	if err := p.doCycle(ctx, localCtx, cycleAmount); err != nil {
+	if err := p.doCycle(ctx, localCtx, targetRPS, duration); err != nil {
 		return errors.Wrap(err, "3 doCycle")
 	}
 
 	return nil
 }
 
-func (p *Provider) doCycle(ctx context.Context, localCtx string, n int) error {
-	for range n {
-		startTime := time.Now()
+func (p *Provider) doCycle(ctx context.Context, localCtx string, targetRPS int, duration time.Duration) error {
+	totalRequests := targetRPS * int(duration.Seconds())
+	interval := time.Second / time.Duration(targetRPS)
+	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
 
-		data, payload, err := p.diller.GetRuleData(ctx, service, localCtx)
-		if err != nil {
-			return errors.Wrap(err, "create rule")
+	for range totalRequests {
+		select {
+		case <-ticker.C:
+			startTime := time.Now()
+			data, payload, err := p.diller.GetRuleData(ctx, service, localCtx)
+			if err != nil {
+				return errors.Wrap(err, "get rule data")
+			}
+
+			metrics.ResponceTime.WithLabelValues("GetRuleData", "ok").Observe(float64(time.Since(startTime).Milliseconds()))
+
+			if err := p.doAnalytic(ctx, payload); err != nil {
+				return errors.Wrap(err, "doAnalytic")
+			}
+
+			metrics.DataCounter.WithLabelValues(localCtx, string(data)).Inc()
+		case <-ctx.Done():
+			return ctx.Err()
 		}
-
-		metrics.ResponceTime.WithLabelValues("GetRuleData", "ok").Observe(float64(time.Since(startTime).Milliseconds()))
-
-		if err := p.doAnalytic(ctx, payload); err != nil {
-			return errors.Wrap(err, "doAnalytic")
-		}
-
-		metrics.DataCounter.WithLabelValues(string(data)).Inc()
-		// logger.Info("[DoEfficiencyTest] data", zap.String("data", string(data)))
 	}
 
 	return nil

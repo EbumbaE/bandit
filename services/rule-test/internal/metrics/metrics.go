@@ -16,7 +16,7 @@ func init() {
 			Namespace: "rule_test",
 			Name:      "data_count",
 		},
-		[]string{"data"},
+		[]string{"context", "data"},
 	)
 	ResponceTime = promauto.NewHistogramVec(
 		prometheus.HistogramOpts{

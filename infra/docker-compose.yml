@@ -244,6 +244,7 @@ services:
     depends_on:
       zookeeper:
         condition: service_healthy
+    restart: unless-stopped
     healthcheck:
       test: ["CMD", "kafka-topics.sh", "--bootstrap-server", "kafka:9092", "--list"]
       interval: 10s
@@ -262,6 +263,7 @@ services:
       - redis-net
     ports:
       - '6379:6379'
+    restart: unless-stopped
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s

@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"time"
 
 	"github.com/opentracing/opentracing-go"
 	"google.golang.org/grpc/codes"
@@ -12,8 +13,8 @@ import (
 )
 
 type TestProvider interface {
-	DoEfficiencyTest(ctx context.Context, cycleAmount int) error
-	DoLoadTest(ctx context.Context, parallelCount, cycleAmount int) error
+	DoEfficiencyTest(ctx context.Context, targetRPS int, duration time.Duration) error
+	DoLoadTest(ctx context.Context, parallelCount, targetRPS int, duration time.Duration) error
 }
 
 type Implementation struct {
@@ -32,13 +33,14 @@ func (i *Implementation) DoLoadTest(ctx context.Context, req *desc.LoadTestReque
 	span, ctx := opentracing.StartSpanFromContext(ctx, "api/DoLoadTest")
 	defer span.Finish()
 
-	parallelCount, cycleAmount := int(req.GetParallelCount()), int(req.GetCycleAmount())
+	parallelCount, targetRPS := int(req.GetParallelCount()), int(req.GetTargetRps())
+	duration := req.GetDuration().AsDuration()
 
-	if parallelCount <= 0 || cycleAmount <= 0 {
-		return nil, status.Error(codes.InvalidArgument, "parallelCount or cycleAmount is invalid")
+	if parallelCount <= 0 || targetRPS <= 0 || duration <= 0 {
+		return nil, status.Error(codes.InvalidArgument, "parallel_count or target_rps or duration is invalid")
 	}
 
-	if err := i.testProvider.DoLoadTest(ctx, parallelCount, cycleAmount); err != nil {
+	if err := i.testProvider.DoLoadTest(ctx, parallelCount, targetRPS, duration); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
@@ -49,13 +51,13 @@ func (i *Implementation) DoEfficiencyTest(ctx context.Context, req *desc.Efficie
 	span, ctx := opentracing.StartSpanFromContext(ctx, "api/DoEfficiencyTest")
 	defer span.Finish()
 
-	cycleAmount := int(req.GetCycleAmount())
+	targetRPS, duration := int(req.GetTargetRps()), req.GetDuration().AsDuration()
 
-	if cycleAmount <= 0 {
-		return nil, status.Error(codes.InvalidArgument, "cycleAmount is invalid")
+	if targetRPS <= 0 || duration <= 0 {
+		return nil, status.Error(codes.InvalidArgument, "target_rps or duration is invalid")
 	}
 
-	if err := i.testProvider.DoEfficiencyTest(ctx, cycleAmount); err != nil {
+	if err := i.testProvider.DoEfficiencyTest(ctx, targetRPS, duration); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 

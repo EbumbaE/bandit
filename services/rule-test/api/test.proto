@@ -7,6 +7,7 @@ option go_package = "./ruletest";
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/empty.proto";
 import "google/api/annotations.proto";
+import "google/protobuf/duration.proto";
 
 service RuleTestService {
   rpc DoLoadTest(LoadTestRequest) returns (google.protobuf.Empty) {
@@ -25,9 +26,11 @@ service RuleTestService {
 
 message LoadTestRequest {
   uint64 parallel_count = 1;
-  uint64 cycle_amount = 2;
+  uint64 target_rps = 2;
+  google.protobuf.Duration duration = 3;
 }
 
 message EfficiencyTestRequest {
-  uint64 cycle_amount = 1;
+  uint64 target_rps = 1;
+  google.protobuf.Duration duration = 2;
 }

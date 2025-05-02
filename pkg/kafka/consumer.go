@@ -17,14 +17,17 @@ type KafkaConsumer interface {
 
 type Handler func(ctx context.Context, msg []byte) error
 
+type Closer func() error
+
 type kafkaConsumer struct {
 	consumer   sarama.Consumer
 	handler    Handler
 	partitions []int32
 	topic      string
+	closer     Closer
 }
 
-func NewKafkaConsumer(ctx context.Context, brokers []string, topic string, handler Handler) (KafkaConsumer, error) {
+func NewKafkaConsumer(ctx context.Context, brokers []string, topic string, handler Handler, closer Closer) (KafkaConsumer, error) {
 	config := sarama.NewConfig()
 	config.Consumer.Return.Errors = true
 
@@ -44,6 +47,7 @@ func NewKafkaConsumer(ctx context.Context, brokers []string, topic string, handl
 		topic:      topic,
 		partitions: partitions,
 		handler:    handler,
+		closer:     closer,
 	}, nil
 }
 
@@ -85,6 +89,12 @@ func (c *kafkaConsumer) Consume(ctx context.Context) {
 }
 
 func (c *kafkaConsumer) Close() error {
+	if c.closer != nil {
+		if err := c.closer(); err != nil {
+			return errors.Wrap(err, "failed to exec closer")
+		}
+	}
+
 	if err := c.consumer.Close(); err != nil {
 		return errors.Wrap(err, "failed to close consumer")
 	}

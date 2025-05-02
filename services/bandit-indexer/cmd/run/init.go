@@ -125,7 +125,7 @@ func (a *application) initService() {
 
 func (a *application) initConsumer(ctx context.Context) {
 	admin := indexer_consumer.NewAdminConsumer(a.clients.adminWrapper, a.repositories.banditIndexer, a.notifiers.banditIndexer)
-	consumer, err := kafka.NewKafkaConsumer(ctx, a.cfg.Kafka.Brokers, a.cfg.Kafka.AdminTopic, admin.Handle)
+	consumer, err := kafka.NewKafkaConsumer(ctx, a.cfg.Kafka.Brokers, a.cfg.Kafka.AdminTopic, admin.Handle, nil)
 	if err != nil {
 		logger.Fatal("init bandit-indexer admin consumer", zap.Error(err))
 	}
@@ -135,7 +135,7 @@ func (a *application) initConsumer(ctx context.Context) {
 	a.consumers.ruleAdminEvent = consumer
 
 	analytic := indexer_consumer.NewAnalyticConsumer(a.provider, a.notifiers.banditIndexer)
-	consumer, err = kafka.NewKafkaConsumer(ctx, a.cfg.Kafka.Brokers, a.cfg.Kafka.AnalyticTopic, analytic.Handle)
+	consumer, err = kafka.NewKafkaConsumer(ctx, a.cfg.Kafka.Brokers, a.cfg.Kafka.AnalyticTopic, analytic.Handle, nil)
 	if err != nil {
 		logger.Fatal("init bandit-indexer analytic consumer", zap.Error(err))
 	}
