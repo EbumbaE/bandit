@@ -65,8 +65,7 @@ func initClickSchema(ctx context.Context, db clickhouse.Database) error {
 			rule_version  UInt64,
 			action        String,
 			amount        Float64,
-			created_at    DateTime DEFAULT now(),
-			updated_at    DateTime DEFAULT now()
+			created_at    DateTime DEFAULT now()
 		) ENGINE = MergeTree()
 		ORDER BY (created_at, rule_id, variant_id);
 	`
@@ -76,25 +75,6 @@ func initClickSchema(ctx context.Context, db clickhouse.Database) error {
 		return fmt.Errorf("failed to create table: %w", err)
 	}
 	return nil
-}
-
-func (s *Storage) CreateAnalyticEvent(ctx context.Context, event model.BanditEvent) error {
-	query := `
-		INSERT INTO analytic_info
-		(
-			created_at,
-			rule_id, variant_id, reward, rule_version, count
-		)
-		VALUES
-		(
-			NOW() at time zone 'utc',
-			$1, $2, $3, $4, $5
-		);
-`
-
-	_, err := s.psqlDB.Exec(ctx, query, event.RuleID, event.VariantID, event.Reward, event.RuleVersion, 1)
-
-	return err
 }
 
 func (s *Storage) ApplyAnalyticEvent(ctx context.Context, events []model.BanditEvent) error {
@@ -174,7 +154,7 @@ func (s *Storage) DeleteAnalyticEvents(ctx context.Context, events []model.Bandi
 
 func (s *Storage) InsertHistoryBatch(ctx context.Context, batch []model.HistoryEvent) error {
 	return s.clickDB.WrapBatchWithTx(
-		"INSERT INTO full_analytic_info",
+		"INSERT INTO full_analytic_info (service, context, rule_id, variant_id, rule_version, action, amount)",
 		func(tx *sql.Stmt) error {
 			for _, event := range batch {
 				_, err := tx.Exec(
@@ -185,7 +165,6 @@ func (s *Storage) InsertHistoryBatch(ctx context.Context, batch []model.HistoryE
 					event.Payload.RuleVersion,
 					event.Action.String(),
 					event.Amount,
-					nil, nil,
 				)
 				if err != nil {
 					return err

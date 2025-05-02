@@ -1,6 +1,5 @@
 #!/bin/bash
 
-echo " "
 echo "Остановка контейнеров:"
 docker stop $(docker ps -aq)
 
