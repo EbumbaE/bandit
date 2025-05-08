@@ -40,6 +40,31 @@ func (p *Provider) GetBandit(ctx context.Context, ruleID string) (model.Bandit, 
 		return model.Bandit{}, errors.Wrap(err, "storage.GetArms")
 	}
 
+	coreBandit := core.NewDefaultGaussianBandit()
+	if err := coreBandit.Deserialize(bandit.Config); err != nil {
+		return model.Bandit{}, errors.Wrap(err, "coreBandit.Deserialize")
+	}
+	coreBandit.Version = bandit.Version
+
+	coreArms := make(map[string]*core.GaussianArm, len(bandit.Arms))
+	for _, arm := range bandit.Arms {
+		coreArm := core.NewDefaultGaussianArm()
+		if err := coreArm.Deserialize(arm.Config); err != nil {
+			return model.Bandit{}, errors.Wrap(err, "coreArm.Deserialize")
+		}
+
+		coreArms[arm.VariantId] = coreArm
+	}
+
+	probs := coreBandit.CalculateProbabilities(coreArms)
+
+	for i, arm := range bandit.Arms {
+		prob := probs[arm.VariantId]
+
+		bandit.Arms[i].Score = prob.Score
+		bandit.Arms[i].Count = prob.Count
+	}
+
 	return bandit, nil
 }
 
