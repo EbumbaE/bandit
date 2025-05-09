@@ -73,11 +73,11 @@ func (i *Implementation) GetRuleStatistic(ctx context.Context, req *desc.GetRule
 func decodeScores(in []model.Variant) []*desc.VariantScore {
 	res := make([]*desc.VariantScore, len(in))
 
-	for _, v := range in {
-		res = append(res, &desc.VariantScore{
+	for i, v := range in {
+		res[i] = &desc.VariantScore{
 			VariantId: v.Key,
 			Score:     v.Score,
-		})
+		}
 	}
 
 	return res

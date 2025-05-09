@@ -49,13 +49,6 @@ type RuleAdminServiceClient interface {
 	CheckVariant(ctx context.Context, in *CheckRequest, opts ...grpc.CallOption) (*CheckResponse, error)
 	GetVariantData(ctx context.Context, in *GetVariantRequest, opts ...grpc.CallOption) (*VariantResponse, error)
 	AddVariant(ctx context.Context, in *AddVariantRequest, opts ...grpc.CallOption) (*VariantResponse, error)
-	// TODO
-	//
-	//	rpc RemoveVariant(GetVariantRequest) returns (google.protobuf.Empty) {
-	//	  option (google.api.http) = {
-	//	    delete: "/v1/admin/variant/{id}"
-	//	  };
-	//	};
 	SetVariantState(ctx context.Context, in *SetVariantStateRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	CreateWantedBandit(ctx context.Context, in *CreateWantedBanditRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	GetWantedRegistry(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetWantedRegistryResponse, error)
@@ -200,13 +193,6 @@ type RuleAdminServiceServer interface {
 	CheckVariant(context.Context, *CheckRequest) (*CheckResponse, error)
 	GetVariantData(context.Context, *GetVariantRequest) (*VariantResponse, error)
 	AddVariant(context.Context, *AddVariantRequest) (*VariantResponse, error)
-	// TODO
-	//
-	//	rpc RemoveVariant(GetVariantRequest) returns (google.protobuf.Empty) {
-	//	  option (google.api.http) = {
-	//	    delete: "/v1/admin/variant/{id}"
-	//	  };
-	//	};
 	SetVariantState(context.Context, *SetVariantStateRequest) (*emptypb.Empty, error)
 	CreateWantedBandit(context.Context, *CreateWantedBanditRequest) (*emptypb.Empty, error)
 	GetWantedRegistry(context.Context, *emptypb.Empty) (*GetWantedRegistryResponse, error)

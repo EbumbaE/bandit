@@ -247,7 +247,6 @@
     },
     "/v1/admin/variant/state/{id}": {
       "put": {
-        "summary": "TODO\nrpc RemoveVariant(GetVariantRequest) returns (google.protobuf.Empty) {\n  option (google.api.http) = {\n    delete: \"/v1/admin/variant/{id}\"\n  };\n};",
         "operationId": "RuleAdminService_SetVariantState",
         "responses": {
           "200": {

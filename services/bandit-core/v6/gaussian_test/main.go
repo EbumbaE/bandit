@@ -5,7 +5,6 @@ import (
 	"image/color"
 	"math"
 	"sort"
-	"sync"
 	"time"
 
 	"golang.org/x/exp/rand"
@@ -113,13 +112,9 @@ func main() {
 
 type MemoryStorage struct {
 	data map[string]map[string][]byte
-	mu   sync.RWMutex
 }
 
 func (m *MemoryStorage) Save(ruleID, armID string, params *bandit.GaussianArm) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-
 	if _, exists := m.data[ruleID]; !exists {
 		m.data[ruleID] = make(map[string][]byte)
 	}
@@ -132,9 +127,6 @@ func (m *MemoryStorage) Save(ruleID, armID string, params *bandit.GaussianArm) {
 }
 
 func (m *MemoryStorage) GetAll(ruleID string) map[string]*bandit.GaussianArm {
-	m.mu.RLock()
-	defer m.mu.RUnlock()
-
 	var err error
 	arms := make(map[string]*bandit.GaussianArm)
 	if ruleArms, exists := m.data[ruleID]; exists {
@@ -149,9 +141,6 @@ func (m *MemoryStorage) GetAll(ruleID string) map[string]*bandit.GaussianArm {
 }
 
 func (m *MemoryStorage) Delete(ruleID, armID string) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-
 	if ruleArms, exists := m.data[ruleID]; exists {
 		delete(ruleArms, armID)
 	}

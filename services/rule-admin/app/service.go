@@ -312,6 +312,8 @@ func decodeRule(r model.Rule) *desc.Rule {
 		Name:        r.Name,
 		Description: r.Description,
 		BanditKey:   r.BanditKey,
+		Context:     r.Context,
+		Service:     r.Service,
 		State:       decodeStateType(r.State),
 		Variants:    decodeVariants(r.Variants),
 	}

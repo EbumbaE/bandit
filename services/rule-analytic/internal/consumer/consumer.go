@@ -47,7 +47,7 @@ func NewConsumer(storage Storage, notifier Notifier) *Consumer {
 		analyticChan:   make(chan model.BanditEvent, 10000),
 		shutdownChan:   make(chan struct{}),
 		flushInterval:  500 * time.Millisecond,
-		senderInterval: 500 * time.Millisecond,
+		senderInterval: 100 * time.Millisecond,
 		maxBatchSize:   100,
 	}
 

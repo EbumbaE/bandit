@@ -64,12 +64,13 @@ service RuleAdminService {
       body: "*"
     };
   };
-  // TODO
+
   // rpc RemoveVariant(GetVariantRequest) returns (google.protobuf.Empty) {
   //   option (google.api.http) = {
   //     delete: "/v1/admin/variant/{id}"
   //   };
   // };
+
   rpc SetVariantState(SetVariantStateRequest) returns (google.protobuf.Empty) {
     option (google.api.http) = {
       put: "/v1/admin/variant/state/{id}"

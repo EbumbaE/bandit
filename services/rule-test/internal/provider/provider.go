@@ -141,7 +141,7 @@ func (p *Provider) doCycle(ctx context.Context, localCtx string, targetRPS int, 
 
 			metrics.ResponceTime.WithLabelValues("GetRuleData", "ok").Observe(float64(time.Since(startTime).Milliseconds()))
 
-			if err := p.doAnalytic(ctx, payload); err != nil {
+			if err := p.doAnalytic(ctx, data, payload); err != nil {
 				return errors.Wrap(err, "doAnalytic")
 			}
 
@@ -154,8 +154,8 @@ func (p *Provider) doCycle(ctx context.Context, localCtx string, targetRPS int, 
 	return nil
 }
 
-func (p *Provider) doAnalytic(ctx context.Context, payload string) error {
-	if err := p.notifier.SendAnalytic(ctx, notifier.ViewActionType, float64(len(payload)), payload); err != nil {
+func (p *Provider) doAnalytic(ctx context.Context, data, payload string) error {
+	if err := p.notifier.SendAnalytic(ctx, notifier.ViewActionType, float64(len(data))*10, payload); err != nil {
 		return errors.Wrap(err, "send analytic")
 	}
 
